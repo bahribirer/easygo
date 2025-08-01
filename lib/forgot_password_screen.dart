@@ -1,7 +1,41 @@
 import 'package:flutter/material.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
+
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final TextEditingController emailController = TextEditingController();
+
+  void showPopup({required String title, required String message}) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Tamam", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void handleSend() {
+    final email = emailController.text.trim();
+
+    if (email.isEmpty) {
+      showPopup(title: "Eksik Bilgi", message: "Lütfen e-posta adresinizi giriniz.");
+    } else {
+      // Burada e-posta gönderme işlemi yapılabilir
+      showPopup(title: "Başarılı", message: "Doğrulama bağlantısı mail adresinize gönderildi.");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +87,7 @@ class ForgotPasswordScreen extends StatelessWidget {
               const SizedBox(height: 30),
               // E-mail TextField
               TextField(
+                controller: emailController,
                 decoration: InputDecoration(
                   hintText: "Üniversite E-Mail Adresi",
                   border: OutlineInputBorder(
@@ -71,9 +106,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () {
-                  // Şifre sıfırlama işlemi
-                },
+                onPressed: handleSend,
                 child: const Text("Gönder"),
               ),
             ],

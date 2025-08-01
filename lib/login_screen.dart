@@ -2,21 +2,55 @@ import 'package:easygo/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:easygo/forgot_password_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  void showMissingInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Eksik Bilgi", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text("Lütfen e-posta ve şifre alanlarını doldurun."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Tamam", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void handleLogin() {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      showMissingInfoDialog();
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // AppBar ekliyoruz
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Geri git
+            Navigator.pop(context);
           },
         ),
       ),
@@ -58,8 +92,9 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 30),
               // E-posta
               TextField(
+                controller: emailController,
                 decoration: InputDecoration(
-                  hintText: "E posta adresini giriniz",
+                  hintText: "E-posta adresini giriniz",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -69,6 +104,7 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 20),
               // Şifre
               TextField(
+                controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   hintText: "Şifrenizi giriniz",
@@ -82,14 +118,14 @@ class LoginScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
-    );
-  },
-  child: const Text("Şifremi Unuttum"),
-),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                    );
+                  },
+                  child: const Text("Şifremi Unuttum"),
+                ),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
@@ -100,12 +136,7 @@ class LoginScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () {
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => const HomeScreen()),
-  );
-},
+                onPressed: handleLogin,
                 child: const Text("Giriş Yap"),
               ),
             ],

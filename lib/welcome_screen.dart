@@ -16,16 +16,13 @@ class WelcomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
             // EasyGO logo
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'easyGO',
-                style: GoogleFonts.poppins(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ),
+  padding: const EdgeInsets.symmetric(vertical: 20),
+  child: Image.asset(
+    'assets/easygo_logo.png',
+    height: 60,
+  ),
+),
+
             // Circle with profile pictures
             Expanded(
               child: Center(
