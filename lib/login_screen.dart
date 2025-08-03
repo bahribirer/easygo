@@ -1,6 +1,8 @@
-import 'package:easygo/home_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:easygo/forgot_password_screen.dart';
+import 'package:easygo/home_screen.dart';
+import 'package:easygo/service/auth_service.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,32 +15,124 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  void showMissingInfoDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Eksik Bilgi", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("Lütfen e-posta ve şifre alanlarını doldurun."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Tamam", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+  bool isLoading = false;
+
+  void showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
-  void handleLogin() {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      showMissingInfoDialog();
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    }
+  void showErrorDialog(String title, String message) {
+  showCustomDialog(
+    title: title,
+    message: message,
+    icon: Icons.error_outline,
+    iconColor: Colors.red.shade700,
+  );
+}
+
+
+void showCustomDialog({required String title, required String message, IconData? icon, Color? iconColor}) {
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (_) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null)
+              Icon(
+                icon,
+                size: 48,
+                color: iconColor ?? Colors.red.shade700,
+              ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: iconColor ?? Colors.red.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: iconColor ?? Colors.red.shade700,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text(
+                  "Tamam",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+
+
+
+
+  void showMissingInfoDialog() {
+  showCustomDialog(
+    title: "Eksik Bilgi",
+    message: "Lütfen e-posta ve şifre alanlarını doldurun.",
+    icon: Icons.info_outline,
+    iconColor: Colors.orange.shade700,
+  );
+}
+
+
+  Future<void> handleLogin() async {
+  final email = emailController.text.trim();
+  final password = passwordController.text;
+
+  if (email.isEmpty || password.isEmpty) {
+    showMissingInfoDialog();
+    return;
   }
+
+  setState(() => isLoading = true);
+
+  final result = await AuthService.login(
+    universityEmail: email,
+    password: password,
+  );
+
+  setState(() => isLoading = false);
+
+  if (result['success']) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
+  } else {
+    showErrorDialog("Giriş Başarısız", result['message'] ?? "Bir hata oluştu.");
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +184,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
-              // E-posta
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
@@ -102,7 +195,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Şifre
               TextField(
                 controller: passwordController,
                 obscureText: true,
@@ -136,8 +228,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: handleLogin,
-                child: const Text("Giriş Yap"),
+                onPressed: isLoading ? null : handleLogin,
+                child: isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Giriş Yap"),
               ),
             ],
           ),

@@ -9,46 +9,57 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFF8F3),
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // EasyGO logo
-            Padding(
-  padding: const EdgeInsets.symmetric(vertical: 20),
-  child: Image.asset(
-    'assets/easygo_logo.png',
-    height: 60,
-  ),
-),
 
-            // Circle with profile pictures
+            // EasyGO Logo
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Image.asset(
+                'assets/easygo_logo.png',
+                height: 60,
+              ),
+            ),
+
+            // Daire & Avatarlar
             Expanded(
               child: Center(
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Daire çerçeve
                     Container(
                       width: 280,
                       height: 280,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.amber.shade50,
+                        gradient: LinearGradient(
+                          colors: [Colors.orange.shade100, Colors.orange.shade200],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.deepOrange.withOpacity(0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
                     ),
-                    // Merkez kullanıcı
                     CircleAvatar(
                       radius: 40,
-                      //backgroundImage: AssetImage("assets/user_center.jpg"),
+                      backgroundColor: Colors.red.shade300,
+                      child: const Icon(Icons.person, size: 40, color: Colors.white),
                     ),
-                    // Diğer kullanıcılar (örnek)
                     Positioned(
                       top: 20,
                       child: CircleAvatar(
                         radius: 20,
-                        //backgroundImage: AssetImage("assets/user1.jpg"),
+                        backgroundColor: Colors.blue.shade200,
+                        child: const Icon(Icons.person, size: 20, color: Colors.white),
                       ),
                     ),
                     Positioned(
@@ -56,15 +67,26 @@ class WelcomeScreen extends StatelessWidget {
                       top: 80,
                       child: CircleAvatar(
                         radius: 20,
-                        //backgroundImage: AssetImage("assets/user2.jpg"),
+                        backgroundColor: Colors.green.shade200,
+                        child: const Icon(Icons.person, size: 20, color: Colors.white),
                       ),
                     ),
-                    // Daha fazla kullanıcı konumlandırması yapılabilir...
+                    Positioned(
+                      left: 30,
+                      bottom: 70,
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.purple.shade200,
+                        child: const Icon(Icons.person, size: 20, color: Colors.white),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: 10),
+
             // Hoşgeldiniz yazısı
             RichText(
               text: TextSpan(
@@ -86,78 +108,88 @@ class WelcomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 10),
+
             Text(
               '"Bağlantılar kur,\nsohbet et, eğlen"',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 16,
-                color: Colors.blue.shade700,
+                color: Colors.black54,
               ),
             ),
+
             const SizedBox(height: 30),
+
             // Giriş Yap butonu
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
+                  backgroundColor: Colors.red.shade600,
+                  elevation: 4,
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
+                  shadowColor: Colors.redAccent,
                 ),
                 onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const LoginScreen()),
-  );
-},
-
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  );
+                },
                 child: const Text(
                   "Giriş Yap",
-                  style: TextStyle(fontSize: 18),
+                  style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
             ),
+
             const SizedBox(height: 15),
+
             // Google ile Devam Et butonu
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: OutlinedButton.icon(
+                icon: const Icon(Icons.g_mobiledata, color: Colors.deepPurple, size: 28),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFCEFE7),
+                  backgroundColor: Colors.orange.shade50,
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
+                  side: const BorderSide(color: Colors.deepPurple),
                 ),
-                //icon: Image.asset('assets/google_logo.png', height: 24),
                 label: const Text(
                   "Google ile Devam Et",
-                  style: TextStyle(color: Colors.deepPurple),
+                  style: TextStyle(color: Colors.deepPurple, fontSize: 16),
                 ),
                 onPressed: () {},
               ),
             ),
+
             const SizedBox(height: 10),
+
             // Kayıt Ol linki
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text("Hesabın yok mu?"),
                 TextButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const RegisterScreen()),
-    );
-  },
-  child: const Text("Kayıt Ol"),
-),
-
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                    );
+                  },
+                  child: const Text("Kayıt Ol"),
+                ),
               ],
             ),
+
             const SizedBox(height: 20),
           ],
         ),

@@ -1,8 +1,46 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easygo/service/user_profile_service.dart';
 import 'settings_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic>? profileData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadProfile();
+  }
+
+  Future<void> loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+
+    if (userId != null) {
+      final result = await UserProfileService.getProfile(userId);
+      if (result['success']) {
+        setState(() {
+          profileData = result['profile'];
+          isLoading = false;
+        });
+      } else {
+        // hta mesajı basabilirsin
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,49 +61,108 @@ class ProfileScreen extends StatelessWidget {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const CircleAvatar(
-              radius: 60,
-              backgroundImage: AssetImage('assets/profile.jpg'), // Örnek
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'OSMAN YAŞAR, 20',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const Text(
-              'ANKARA, TÜRKİYE',
-              style: TextStyle(color: Colors.black54),
-            ),
-            const SizedBox(height: 24),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Arkadaşlar', style: TextStyle(color: Colors.orange)),
-            ),
-            const Text("0 Arkadaş", style: TextStyle(color: Colors.black54)),
-            const SizedBox(height: 16),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('İlgi Alanları', style: TextStyle(color: Colors.orange)),
-            ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: const [
-                Chip(label: Text("🌿 Doğa")),
-                Chip(label: Text("🏖️ Tatil")),
-                Chip(label: Text("✍️ Yazarlık")),
-                Chip(label: Text("😊 Sohbet")),
-                Chip(label: Text("💪 Gym & Fitness")),
+      body: isLoading
+    ? const Center(child: CircularProgressIndicator())
+    : profileData == null
+        ? const Center(child: Text("Profil verisi bulunamadı."))
+        : SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Center(
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: profileData!['profilePhoto'] != null &&
+                            profileData!['profilePhoto'] != ''
+                        ? MemoryImage(base64Decode(profileData!['profilePhoto']))
+                        : const AssetImage('assets/profile.jpg') as ImageProvider,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "${profileData!['name'] ?? 'Kullanıcı'}, ${calculateAge(profileData!['birthDate'])}",
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.location_on, size: 16, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Text(
+                      "${profileData!['location'] ?? 'Bilinmiyor'}, TÜRKİYE",
+                      style: const TextStyle(color: Colors.black54, fontSize: 14),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                // Arkadaşlar kartı
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  elevation: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Arkadaşlar',
+                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 6),
+                        Text("0 Arkadaş", style: TextStyle(color: Colors.black54)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // İlgi alanları kartı
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  elevation: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'İlgi Alanları',
+                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: (profileData!['interests'] as List)
+                              .map((interest) => Chip(
+                                    label: Text(interest),
+                                    backgroundColor: Colors.red.shade50,
+                                    labelStyle: const TextStyle(color: Colors.red),
+                                  ))
+                              .toList()
+                              .cast<Widget>(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
-            )
-          ],
-        ),
-      ),
+            ),
+          ),
+
     );
+  }
+
+  int calculateAge(String? birthDateStr) {
+    if (birthDateStr == null) return 0;
+    final birthDate = DateTime.parse(birthDateStr);
+    final today = DateTime.now();
+    int age = today.year - birthDate.year;
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month && today.day < birthDate.day)) {
+      age--;
+    }
+    return age;
   }
 }

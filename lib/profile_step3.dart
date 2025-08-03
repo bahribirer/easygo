@@ -1,4 +1,7 @@
+import 'package:easygo/helpers/city_helper.dart';
+import 'package:easygo/service/user_profile_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'profile_step4.dart';
 
 
@@ -12,18 +15,8 @@ class ProfileStep3Screen extends StatefulWidget {
 class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
   String? selectedCity;
   DateTime? selectedDate;
-  final List<String> cities = [
-    'İstanbul',
-    'Ankara',
-    'İzmir',
-    'Bursa',
-    'Antalya',
-    'Samsun',
-    'Konya',
-    'Trabzon',
-    'Adana',
-    'Eskişehir'
-  ];
+  final List<String> cities = turkishCities; // 👈 cities'i burada set et
+
 
   @override
   Widget build(BuildContext context) {
@@ -169,15 +162,42 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                 ),
                 ElevatedButton(
   onPressed: selectedCity != null && selectedDate != null
-      ? () {
+    ? () async {
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getString('userId');
+
+        if (userId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Kullanıcı ID bulunamadı")),
+          );
+          return;
+        }
+
+        // Doğum tarihini formatla
+        final formattedDate =
+            "${selectedDate!.year.toString().padLeft(4, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}";
+
+        final result = await UserProfileService.updateOrCreateProfile(
+          userId: userId,
+          birthDate: formattedDate,
+          location: selectedCity,
+        );
+
+        if (result['success']) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const ProfileStep4Screen(),
             ),
           );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Hata oluştu')),
+          );
         }
-      : null,
+      }
+    : null,
+
   style: ElevatedButton.styleFrom(
     backgroundColor: Colors.red,
     shape: RoundedRectangleBorder(

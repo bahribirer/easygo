@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'profile_step2.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easygo/service/user_profile_service.dart';
+
 
 class ProfileStep1Screen extends StatefulWidget {
   const ProfileStep1Screen({super.key});
@@ -65,20 +68,52 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () {
-                  if (selectedLanguage != null && selectedGender != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileStep2Screen(),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Lütfen tüm alanları doldurunuz")),
-                    );
-                  }
-                },
+                onPressed: () async {
+  if (selectedLanguage != null && selectedGender != null) {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+
+    if (userId == null) {
+      print("❌ userId null!");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Kullanıcı ID bulunamadı")),
+      );
+      return;
+    }
+
+    print("👉 userId: $userId");
+    print("👉 Seçilen gender: $selectedGender");
+    print("👉 Seçilen language: $selectedLanguage");
+
+    final result = await UserProfileService.updateOrCreateProfile(
+      userId: userId,
+      gender: selectedGender,
+      language: selectedLanguage,
+    );
+
+    print("🔁 Backend dönüşü: $result");
+
+    if (result['success']) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProfileStep2Screen(),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Hata oluştu')),
+      );
+    }
+  } else {
+    print("❗ Eksik bilgi: gender: $selectedGender, language: $selectedLanguage");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Lütfen tüm alanları doldurunuz")),
+    );
+  }
+},
+
+
                 child: const Text("Devam Et"),
               ),
             ],

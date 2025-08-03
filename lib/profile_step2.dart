@@ -1,4 +1,7 @@
+import 'package:easygo/helpers/interests_helper.dart';
+import 'package:easygo/service/user_profile_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'profile_step3.dart';
 
 class ProfileStep2Screen extends StatefulWidget {
@@ -10,11 +13,7 @@ class ProfileStep2Screen extends StatefulWidget {
 
 class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
   final List<String> selectedInterests = [];
-  final List<String> allInterests = [
-    'Yoga', 'Koşu', 'Yüzme', 'Basketbol', 'Futbol', 'Tenis',
-    'Bisiklet Sürme', 'Kaya Tırmanışı', 'Doğa Yürüyüşü',
-    'Gym & Fitness', 'Dövüş Sanatları', 'Golf', 'Voleybol', 'Kayak', 'Sörf'
-  ];
+  
 
   void toggleInterest(String interest) {
     setState(() {
@@ -87,15 +86,37 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen> {
                         ),
                       ),
                       onPressed: selectedInterests.length >= 5
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ProfileStep3Screen(),
-                                ),
-                              );
-                            }
-                          : null,
+    ? () async {
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getString('userId');
+
+        if (userId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Kullanıcı ID bulunamadı")),
+          );
+          return;
+        }
+
+        final result = await UserProfileService.updateOrCreateProfile(
+          userId: userId,
+          interests: selectedInterests,
+        );
+
+        if (result['success']) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileStep3Screen(),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Hata oluştu')),
+          );
+        }
+      }
+    : null,
+
                       child: const Text("Devam Et"),
                     ),
                   ),
