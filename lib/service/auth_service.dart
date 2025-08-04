@@ -48,6 +48,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', data['token']);
     await prefs.setString('userId', data['user']['_id']);
+    await prefs.setString('userName', data['user']['name']);
 
     return {'success': true, 'token': data['token'], 'user': data['user']};
   } else {

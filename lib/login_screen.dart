@@ -2,7 +2,6 @@ import 'package:easygo/forgot_password_screen.dart';
 import 'package:easygo/home_screen.dart';
 import 'package:easygo/service/auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

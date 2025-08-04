@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:easygo/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:easygo/service/user_profile_service.dart';
 import 'package:easygo/helpers/interests_helper.dart';
 
@@ -17,6 +21,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   List<String> selectedInterests = [];
   String? userId;
   bool isLoading = true;
+  Uint8List? profileImageBytes;
 
   @override
   void initState() {
@@ -35,10 +40,25 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         nameController.text = profile['name'] ?? '';
         birthDateController.text = profile['birthDate']?.substring(0, 10) ?? '';
         selectedInterests = List<String>.from(profile['interests'] ?? []);
+
+        if (profile['profilePhoto'] != null && profile['profilePhoto'].isNotEmpty) {
+          profileImageBytes = base64Decode(profile['profilePhoto']);
+        }
       }
     }
 
     setState(() => isLoading = false);
+  }
+
+  Future<void> pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        profileImageBytes = bytes;
+      });
+    }
   }
 
   Future<void> updateProfile() async {
@@ -48,6 +68,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       userId: userId!,
       birthDate: birthDateController.text,
       interests: selectedInterests,
+      profilePhoto: profileImageBytes != null ? base64Encode(profileImageBytes!) : null,
     );
 
     if (result['success']) {
@@ -119,6 +140,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Center(
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundImage: profileImageBytes != null
+                                    ? MemoryImage(profileImageBytes!)
+                                    : const AssetImage('assets/profile.jpg') as ImageProvider,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.deepOrange),
+                                onPressed: pickImage,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
                         Card(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 4,
