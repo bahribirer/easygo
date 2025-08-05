@@ -98,24 +98,29 @@ backgroundColor: const Color(0xFFFFF0E9),
                 ),
                 const SizedBox(height: 30),
                 // Arkadaşlar kartı
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Arkadaşlar',
-                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 6),
-                        Text("0 Arkadaş", style: TextStyle(color: Colors.black54)),
-                      ],
-                    ),
-                  ),
-                ),
+                // Arkadaşlar kartı
+Card(
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  elevation: 3,
+  child: Padding(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Arkadaşlar',
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "${(profileData!['friendCount'] ?? profileData!['friends']?.length ?? 0)} Arkadaş",
+          style: const TextStyle(color: Colors.black54),
+        ),
+      ],
+    ),
+  ),
+),
+
                 const SizedBox(height: 20),
                 // İlgi alanları kartı
                 Card(
