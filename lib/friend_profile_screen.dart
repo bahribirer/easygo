@@ -91,6 +91,44 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                               style: const TextStyle(color: Colors.black54, fontSize: 14),
                             ),
                             const SizedBox(height: 24),
+                            const SizedBox(height: 4),
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    const Icon(Icons.location_on, size: 16, color: Colors.red),
+    const SizedBox(width: 4),
+    Text(
+      "${profileData!['location'] ?? 'Bilinmiyor'}, TÜRKİYE",
+      style: const TextStyle(color: Colors.black54, fontSize: 14),
+    ),
+  ],
+),
+Card(
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  elevation: 3,
+  child: Padding(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Arkadaşlar',
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "${(profileData!['friends'] as List?)?.length ?? 0} Arkadaş",
+          style: const TextStyle(color: Colors.black54),
+        ),
+      ],
+    ),
+  ),
+),
+const SizedBox(height: 20),
+
+const SizedBox(height: 30),
+
+                            
                             Card(
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               elevation: 3,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:easygo/FriendListScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easygo/service/user_profile_service.dart';
@@ -15,6 +16,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? profileData;
   bool isLoading = true;
+  List<dynamic> friends = [];
+
 
   @override
   void initState() {
@@ -22,25 +25,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     loadProfile();
   }
 
-  Future<void> loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('userId');
+Future<void> loadProfile() async {
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getString('userId');
 
-    if (userId != null) {
-      final result = await UserProfileService.getProfile(userId);
-      if (result['success']) {
-        setState(() {
-          profileData = result['profile'];
-          isLoading = false;
-        });
-      } else {
-        // hta mesajı basabilirsin
-        setState(() {
-          isLoading = false;
-        });
+  if (userId != null) {
+    final profileRes = await UserProfileService.getProfile(userId);
+    final friendsRes = await UserProfileService.getFriends(userId);
+
+    setState(() {
+      isLoading = false;
+
+      if (profileRes['success']) {
+        profileData = profileRes['profile'];
       }
-    }
+
+      if (friendsRes['success']) {
+        friends = friendsRes['friends'];
+      }
+    });
+  } else {
+    setState(() => isLoading = false);
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +62,12 @@ backgroundColor: const Color(0xFFFFF0E9),
             icon: const Icon(Icons.settings, color: Colors.black),
             onPressed: () {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
+  context,
+  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+).then((_) {
+  loadProfile(); // 🔄 Geri dönünce veriyi tazele
+});
+
             },
           )
         ],
@@ -99,27 +110,38 @@ backgroundColor: const Color(0xFFFFF0E9),
                 const SizedBox(height: 30),
                 // Arkadaşlar kartı
                 // Arkadaşlar kartı
-Card(
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-  elevation: 3,
-  child: Padding(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Arkadaşlar',
-          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          "${(profileData!['friendCount'] ?? profileData!['friends']?.length ?? 0)} Arkadaş",
-          style: const TextStyle(color: Colors.black54),
-        ),
-      ],
+InkWell(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FriendsListScreen(friends: friends),
+      ),
+    );
+  },
+  child: Card(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    elevation: 3,
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Arkadaşlar',
+            style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "${friends.length} Arkadaş",
+            style: const TextStyle(color: Colors.black54),
+          ),
+        ],
+      ),
     ),
   ),
 ),
+
 
                 const SizedBox(height: 20),
                 // İlgi alanları kartı
@@ -139,14 +161,12 @@ Card(
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: (profileData!['interests'] as List)
-                              .map((interest) => Chip(
-                                    label: Text(interest),
-                                    backgroundColor: Colors.red.shade50,
-                                    labelStyle: const TextStyle(color: Colors.red),
-                                  ))
-                              .toList()
-                              .cast<Widget>(),
+                          children: (profileData!['interests'] as List?)?.map((interest) => Chip(
+  label: Text(interest),
+  backgroundColor: Colors.red.shade50,
+  labelStyle: const TextStyle(color: Colors.red),
+)).toList() ?? [const Text("İlgi alanı belirtilmemiş")],
+
                         ),
                       ],
                     ),

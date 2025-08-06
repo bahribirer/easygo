@@ -59,5 +59,22 @@ class UserProfileService {
     return {'success': false, 'message': 'Bağlantı hatası: $e'};
   }
 }
+static Future<Map<String, dynamic>> getFriends(String userId) async {
+  final response = await http.get(Uri.parse('http://localhost:5050/api/friends/$userId')); // ✔️ DÜZGÜN ROTA
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return {
+      'success': true,
+      'friends': data['friends'],
+    };
+  } else {
+    return {'success': false};
+  }
+}
+
+
 
 }
+
+
