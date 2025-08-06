@@ -1,7 +1,8 @@
-import 'package:easygo/friend_profile_screen.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../service/friendService.dart';
+import 'package:easygo/friend_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../service/friendService.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -23,38 +24,28 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> fetchData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    userId = prefs.getString('userId');
-    if (userId == null) return;
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  userId = prefs.getString('userId');
+  if (userId == null) return;
 
-    try {
-      final data = await FriendService.getFriendData(userId!);
-      setState(() {
-        friendRequests = data['friendRequests'] ?? [];
-        friends = data['friends'] ?? [];
-        isLoading = false;
-      });
-    } catch (e) {
-      showAlert("Veri alınırken bir hata oluştu");
-    }
-  }
+  try {
+    final data = await FriendService.getFriendData(userId!);
 
-  void showAlert(String message) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Bilgi", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(message),
-        actions: [
-          TextButton(
-            child: const Text("Tamam"),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
+    // 👇 TAM BURAYA BUNU EKLE:
+    print("📦 Gelen Arkadaş Verisi:");
+    print(jsonEncode(data));  // <<< BURASI!
+
+    setState(() {
+      friendRequests = data['friendRequests'] ?? [];
+      friends = data['friends'] ?? [];
+      isLoading = false;
+    });
+  } catch (e) {
+    print("❌ Veri çekilirken hata: $e");
+    setState(() => isLoading = false);
   }
+}
+
 
   Future<void> handleAccept(String fromUserId) async {
     await FriendService.acceptRequest(userId!, fromUserId);
@@ -130,7 +121,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             onPressed: () async {
                               await FriendService.sendRequest(userId!, user['_id']);
                               Navigator.pop(context);
-                              showAlert("Arkadaşlık isteği gönderildi");
                             },
                           ),
                   );
@@ -143,89 +133,191 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  Widget buildSection(String title, List<dynamic> items, bool isRequestSection) {
+  Widget buildRequestSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 24),
-        Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.red,
-            fontSize: 22,
-          ),
+        const Text(
+          "Arkadaşlık İstekleri",
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
         ),
         const SizedBox(height: 12),
-        if (items.isEmpty)
-          Center(
-            child: Column(
-              children: [
-                Icon(
-                  isRequestSection ? Icons.group_add_outlined : Icons.people_outline,
-                  color: isRequestSection ? Colors.red : Colors.grey,
-                  size: 64,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  isRequestSection ? 'Henüz arkadaşlık isteğiniz yok' : 'Henüz arkadaşınız yok',
-                  style: TextStyle(
-                    color: isRequestSection ? Colors.redAccent : Colors.grey,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: friendRequests.length,
             itemBuilder: (context, index) {
-              final item = items[index];
-              return Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: Text(item['name'] ?? 'İsim yok'),
-                  subtitle: Text(item['universityEmail'] ?? ''),
-                  trailing: isRequestSection
-    ? Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.check, color: Colors.green),
-            onPressed: () => handleAccept(item['_id']),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.red),
-            onPressed: () => handleReject(item['_id']),
-          ),
-        ],
-      )
-    : const Icon(Icons.chevron_right, color: Colors.red),
-onTap: isRequestSection
-    ? null
-    : () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FriendProfileScreen(user: item),
-          ),
-        );
-      },
+              final req = friendRequests[index];
+final location = req['location'] ?? '';
+final name = req['name'] ?? '';
 
+              return Container(
+                margin: const EdgeInsets.only(right: 12),
+                width: 120,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.pink.shade50,
+                  image: req['profilePhoto'] != null && req['profilePhoto'] != ''
+                      ? DecorationImage(
+                          image: MemoryImage(base64Decode(req['profilePhoto'])),
+                          fit: BoxFit.cover,
+                          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
+                        )
+                      : null,
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => handleAccept(req['_id']),
+                            child: const CircleAvatar(radius: 14, backgroundColor: Colors.green, child: Icon(Icons.check, size: 16, color: Colors.white)),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => handleReject(req['_id']),
+                            child: const CircleAvatar(radius: 14, backgroundColor: Colors.red, child: Icon(Icons.close, size: 16, color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 12,
+                      left: 8,
+                      right: 8,
+                      child: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text(
+      name,
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      overflow: TextOverflow.ellipsis,
+    ),
+    const SizedBox(height: 2),
+    Row(
+      children: [
+        const Icon(Icons.location_on, size: 12, color: Colors.white70),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            location,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  ],
+)
+
+                    ),
+                  ],
                 ),
               );
             },
           ),
+        ),
       ],
     );
   }
+
+  Widget buildFriendGrid() {
+  return GridView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 0.75,
+    ),
+    itemCount: friends.length,
+    itemBuilder: (context, index) {
+      final friend = friends[index];
+      final photo = friend['profilePhoto'];
+      final name = friend['name'] ?? '';
+      final location = friend['location'] ?? '';
+
+      return GestureDetector(
+        onTap: () async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => FriendProfileScreen(user: friend),
+    ),
+  );
+
+  if (result == true) {
+    // 🌀 Arkadaş silindiyse, veriyi yeniden çek
+    fetchData();
+  }
+},
+
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFBE6E0), Color(0xFFFFD6CB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6,
+                offset: Offset(2, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 38,
+                backgroundImage: (photo != null && photo != '')
+                    ? MemoryImage(base64Decode(photo))
+                    : const AssetImage('assets/profile.jpg') as ImageProvider,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      location,
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -240,10 +332,7 @@ onTap: isRequestSection
         ),
         title: const Text(
           'Arkadaşlar',
-          style: TextStyle(
-            color: Colors.red,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -255,13 +344,19 @@ onTap: isRequestSection
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(20),
               child: SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    buildSection("Gelen İstekler", friendRequests, true),
-                    const Divider(thickness: 1, height: 40, color: Colors.redAccent),
-                    buildSection("Arkadaşlar", friends, false),
+                    buildRequestSection(),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Arkadaşlar",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
+                    ),
+                    const SizedBox(height: 12),
+                    buildFriendGrid(),
                   ],
                 ),
               ),

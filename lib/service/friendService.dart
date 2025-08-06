@@ -46,5 +46,18 @@ static Future<void> sendRequest(String fromUserId, String toUserId) async {
     throw Exception('İstek gönderilemedi');
   }
 }
+static Future<void> unfriend(String userId, String friendId) async {
+  final response = await http.post(Uri.parse('$baseUrl/unfriend'),
+      body: json.encode({
+        "userId": userId,
+        "friendId": friendId,
+      }),
+      headers: {'Content-Type': 'application/json'});
+
+  if (response.statusCode != 200) {
+    throw Exception('Arkadaş silinemedi');
+  }
+}
+
 
 }
