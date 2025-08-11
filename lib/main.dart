@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'splash_screen.dart';
 
-void main() {
+// Firebase paketleri
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Firebase için şart
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const AppInitializer());
 }
 
@@ -80,16 +88,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'easyGO',
       theme: ThemeData(
-  useMaterial3: false,
-  brightness: Brightness.light,
-  primarySwatch: Colors.deepPurple,
-),
-darkTheme: ThemeData(
-  useMaterial3: false,
-  brightness: Brightness.dark,
-  primarySwatch: Colors.deepPurple,
-),
-
+        useMaterial3: false,
+        brightness: Brightness.light,
+        primarySwatch: Colors.deepPurple,
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: false,
+        brightness: Brightness.dark,
+        primarySwatch: Colors.deepPurple,
+      ),
       themeMode: themeProvider.themeMode,
       home: const SplashScreen(),
     );
