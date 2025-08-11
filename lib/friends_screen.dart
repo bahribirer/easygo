@@ -134,6 +134,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
     List<dynamic> results = [];
     bool searching = false;
     String? error;
+    bool isSelf(Map u) => userId != null && u['_id'] == userId;
+
 
     showModalBottomSheet(
       context: context,
@@ -194,22 +196,30 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 }
 
                 Future<void> sendReq(Map user) async {
-                  if (userId == null) return;
-                  try {
-                    await FriendService.sendRequest(userId!, user['_id']);
-                    _locallySent.add(user['_id']);
-                    setModalState(() {});
-                    await _showResultDialog(
-                      "İstek Gönderildi",
-                      "${user['name']} adlı kullanıcıya arkadaşlık isteği gönderildi.",
-                    );
-                  } catch (e) {
-                    await _showResultDialog(
-                      "Gönderilemedi",
-                      "İstek gönderilirken bir sorun oluştu. Lütfen tekrar deneyin.",
-                    );
-                  }
-                }
+  if (userId == null) return;
+
+  // ⛔ kendine istek gönderme
+  if (isSelf(user)) {
+    await _showResultDialog("Olmaz ki 🙂", "Kendine arkadaşlık isteği gönderemezsin.");
+    return;
+  }
+
+  try {
+    await FriendService.sendRequest(userId!, user['_id']);
+    _locallySent.add(user['_id']);
+    setModalState(() {});
+    await _showResultDialog(
+      "İstek Gönderildi",
+      "${user['name']} adlı kullanıcıya arkadaşlık isteği gönderildi.",
+    );
+  } catch (e) {
+    await _showResultDialog(
+      "Gönderilemedi",
+      "İstek gönderilirken bir sorun oluştu. Lütfen tekrar deneyin.",
+    );
+  }
+}
+
 
                 return Container(
                   decoration: BoxDecoration(
@@ -365,7 +375,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                               final user = results[i] as Map<String, dynamic>;
                                               final alreadyFriend = isAlreadyFriend(user);
                                               final alreadyReq = isAlreadyRequested(user);
-                                              final canSend = !alreadyFriend && !alreadyReq;
+                                              final canSend = !alreadyFriend && !alreadyReq && !isSelf(user); // ⬅️ kendin değilse
+                                              
 
                                               final photo = user['profilePhoto'];
                                               final name = user['name'] ?? '';
@@ -420,23 +431,23 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                                         ),
                                                     ],
                                                   ),
-                                                  trailing: canSend
-                                                      ? ElevatedButton.icon(
-                                                          icon: const Icon(Icons.person_add_alt_1, size: 18),
-                                                          label: const Text("Ekle"),
-                                                          style: ElevatedButton.styleFrom(
-                                                            backgroundColor: Colors.green,
-                                                            foregroundColor: Colors.white,
-                                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius: BorderRadius.circular(10),
-                                                            ),
-                                                          ),
-                                                          onPressed: () async => await sendReq(user),
-                                                        )
-                                                      : (alreadyFriend
-                                                          ? _statusChip("Zaten arkadaş")
-                                                          : _statusChip("Beklemede")),
+                                                  
+                                                  trailing: isSelf(user)
+    ? _statusChip("Bu sensin", bg: Colors.grey.shade300)
+    : canSend
+        ? ElevatedButton.icon(
+            icon: const Icon(Icons.person_add_alt_1, size: 18),
+            label: const Text("Ekle"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async => await sendReq(user),
+          )
+        : (alreadyFriend ? _statusChip("Zaten arkadaş") : _statusChip("Beklemede")),
+
                                                 ),
                                               );
                                             },
@@ -764,19 +775,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             Text('Bağlantılarını yönet', style: TextStyle(color: Colors.black54, fontSize: 12)),
           ],
         ),
-        actions: [
-          IconButton(
-            tooltip: "Ara",
-            icon: const Icon(Icons.search, color: Colors.red),
-            onPressed: showSearchDialog,
-          ),
-          IconButton(
-            tooltip: "Yenile",
-            icon: const Icon(Icons.refresh, color: Colors.red),
-            onPressed: fetchData,
-          ),
-          const SizedBox(width: 6),
-        ],
+        
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),

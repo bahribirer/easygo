@@ -4,8 +4,10 @@ import 'package:http/http.dart' as http;
 class UserProfileService {
   static const String baseUrl = 'http://localhost:5050/api/profile';
 
+  /// Profil oluştur veya güncelle
   static Future<Map<String, dynamic>> updateOrCreateProfile({
     required String userId,
+    String? name,
     String? gender,
     String? birthDate, // YYYY-MM-DD formatında
     String? location,
@@ -17,10 +19,11 @@ class UserProfileService {
 
     final body = {
       'userId': userId,
+      if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
       if (gender != null) 'gender': gender,
       if (birthDate != null) 'birthDate': birthDate,
       if (location != null) 'location': location,
-      if (interests != null) 'interests': interests,
+      if (interests != null && interests.isNotEmpty) 'interests': interests,
       if (profilePhoto != null) 'profilePhoto': profilePhoto,
       if (language != null) 'language': language,
     };
@@ -35,46 +38,62 @@ class UserProfileService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return {'success': true, 'profile': data['profile']};
+        return {
+          'success': true,
+          'profile': data['profile'],
+        };
       } else {
-        return {'success': false, 'message': data['message'] ?? 'Hata oluştu'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Hata oluştu',
+        };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Bağlantı hatası: $e'};
+      return {
+        'success': false,
+        'message': 'Bağlantı hatası: $e',
+      };
     }
   }
-  static Future<Map<String, dynamic>> getProfile(String userId) async {
-  final url = Uri.parse('$baseUrl/get/$userId');
 
-  try {
-    final response = await http.get(url);
-    final data = jsonDecode(response.body);
+  /// Profil bilgilerini getir
+  static Future<Map<String, dynamic>> getProfile(String userId) async {
+    final url = Uri.parse('$baseUrl/get/$userId');
+
+    try {
+      final response = await http.get(url);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'profile': data};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Hata oluştu',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Bağlantı hatası: $e',
+      };
+    }
+  }
+
+  /// Arkadaş listesini getir
+  static Future<Map<String, dynamic>> getFriends(String userId) async {
+    final response = await http.get(
+      Uri.parse('http://localhost:5050/api/friends/$userId'),
+    );
 
     if (response.statusCode == 200) {
-      return {'success': true, 'profile': data};
+      final data = jsonDecode(response.body);
+      return {
+        'success': true,
+        'friends': data['friends'],
+      };
     } else {
-      return {'success': false, 'message': data['message'] ?? 'Hata oluştu'};
+      return {'success': false};
     }
-  } catch (e) {
-    return {'success': false, 'message': 'Bağlantı hatası: $e'};
   }
 }
-static Future<Map<String, dynamic>> getFriends(String userId) async {
-  final response = await http.get(Uri.parse('http://localhost:5050/api/friends/$userId')); // ✔️ DÜZGÜN ROTA
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return {
-      'success': true,
-      'friends': data['friends'],
-    };
-  } else {
-    return {'success': false};
-  }
-}
-
-
-
-}
-
-
