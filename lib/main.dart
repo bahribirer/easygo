@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'splash_screen.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 
 // Firebase paketleri
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'core/firebase/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Firebase için şart

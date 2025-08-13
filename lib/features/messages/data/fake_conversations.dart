@@ -1,0 +1,51 @@
+import '../models/conversation.dart';
+
+final List<Conversation> fakeConversations = [
+  Conversation(
+    id: '1',
+    title: 'Alper',
+    lastMessage: 'Akşama buluşuyor muyuz?',
+    lastMessageAt: DateTime.now().subtract(const Duration(minutes: 5)),
+    unreadCount: 2,
+    online: true,
+    avatarUrl: '',
+    pinned: true,
+  ),
+  Conversation(
+    id: '2',
+    title: 'Proje Grubu',
+    lastMessage: 'Mock dataseti drive’a ekledim.',
+    lastMessageAt: DateTime.now().subtract(const Duration(minutes: 42)),
+    unreadCount: 0,
+    online: false,
+    avatarUrl: '',
+  ),
+  Conversation(
+    id: '3',
+    title: 'Mentörüm',
+    lastMessage: 'Pitch deck’e KPI bölümü ekle.',
+    lastMessageAt: DateTime.now().subtract(const Duration(hours: 3)),
+    unreadCount: 1,
+    online: false,
+    avatarUrl: '',
+    muted: true,
+  ),
+  Conversation(
+    id: '4',
+    title: 'Ailem',
+    lastMessage: 'Fotoğrafları gönderdim.',
+    lastMessageAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+    unreadCount: 0,
+    online: true,
+    avatarUrl: '',
+  ),
+  Conversation(
+    id: '5',
+    title: 'Deneme (Arşiv)',
+    lastMessage: 'Bunu arşivde tutalım.',
+    lastMessageAt: DateTime.now().subtract(const Duration(days: 3)),
+    unreadCount: 0,
+    online: false,
+    archived: true,
+  ),
+];
