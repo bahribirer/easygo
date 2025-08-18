@@ -1,6 +1,4 @@
 import 'package:easygo/core/inbox_badge.dart';
-import 'package:easygo/core/service/notification_service.dart';
-import 'package:easygo/core/service/socket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:easygo/features/inbox/inbox_screen.dart';
 import 'package:easygo/features/messages/messages_screen.dart';
@@ -29,25 +27,14 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loadingPending = false;
 
   @override
-void initState() {
-  super.initState();
-  _refreshTodayCount();
-  _refreshPending();
+  void initState() {
+    super.initState();
+    _refreshTodayCount();
+    _refreshPending();
 
-  // 🛎️ Bildirim sayısını çek ve socket dinle
-  NotificationService.getUnreadCount().then((count) {
-    InboxBadge.notifier.value = count;
-  });
-  SocketService.connect().then((socket) {
-    socket.on('notification', (_) {
-      InboxBadge.notifier.value = InboxBadge.notifier.value + 1;
-    });
-  });
-}
-
-
-
-  
+    // 🔔 Artık unread sayısı Firestore’dan InboxBadge üzerinden gerçek zamanlı geliyor.
+    // Eski NotificationService.getUnreadCount() ve SocketService.connect() kaldırıldı.
+  }
 
   void _onTabTapped(int index) {
     setState(() => selectedIndex = index);
@@ -381,50 +368,49 @@ void initState() {
                   Image.asset('assets/easygo_logo.png', height: 44),
                   const Spacer(),
                   InkWell(
-  onTap: () async {
-    await Navigator.push(
-      context, MaterialPageRoute(builder: (_) => const InboxScreen()),
-    );
-    // Inbox’tan dönünce badge’i sıfırla
-    InboxBadge.notifier.value = 0;
-  },
-  borderRadius: BorderRadius.circular(999),
-  child: Padding(
-    padding: const EdgeInsets.all(6.0),
-    child: Stack(
-      clipBehavior: Clip.none,
-      children: [
-        const Icon(Icons.notifications_none, color: Colors.white, size: 28),
-        Positioned(
-          right: -2,
-          top: -2,
-          child: ValueListenableBuilder<int>(
-            valueListenable: InboxBadge.notifier,
-            builder: (_, count, __) {
-              if (count <= 0) return const SizedBox.shrink();
-              return Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '$count',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                    onTap: () async {
+                      await Navigator.push(
+                        context, MaterialPageRoute(builder: (_) => const InboxScreen()),
+                      );
+                      // Inbox’tan dönünce badge’i sıfırlamak istersen:
+                      InboxBadge.notifier.value = 0;
+                    },
+                    borderRadius: BorderRadius.circular(999),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.notifications_none, color: Colors.white, size: 28),
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: ValueListenableBuilder<int>(
+                              valueListenable: InboxBadge.notifier,
+                              builder: (_, count, __) {
+                                if (count <= 0) return const SizedBox.shrink();
+                                return Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '$count',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    ),
-  ),
-),
-
                 ],
               ),
             ),
