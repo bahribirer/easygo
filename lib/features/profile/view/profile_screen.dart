@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,8 +12,6 @@ import 'package:easygo/features/profile/widgetprofile/stat_card.dart';
 import 'package:easygo/features/profile/widgetprofile/about_row.dart';
 import 'package:easygo/features/profile/widgetprofile/friends_preview_card.dart';
 import 'package:easygo/features/profile/widgetprofile/interests_card.dart';
-
-// Eğer SettingsScreen’i taşımadıysan şunu kullan: import 'package:easygo/settings_screen.dart';
 import 'package:easygo/features/settings/view/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -103,22 +102,92 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
-                      ProfileHeader(
-                        name: profileData!['name'] ?? 'Kullanıcı',
-                        location: profileData!['location'] ?? 'Bilinmiyor',
-                        photo: _profilePhoto(profileData!['profilePhoto']),
-                        onTapSettings: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                          );
-                          if (mounted) _loadProfile();
-                        },
+                      // üst header
+                      SliverAppBar(
+                        pinned: true,
+                        expandedHeight: 220,
+                        backgroundColor: Colors.transparent,
+                        flexibleSpace: FlexibleSpaceBar(
+                          background: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFFFF9A9E), Color(0xFFFAD0C4)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                              ),
+                              BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(color: Colors.black.withOpacity(0.1)),
+                              ),
+                              SafeArea(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 32,
+                                            backgroundImage: _profilePhoto(
+                                              profileData!['profilePhoto'],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 14),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                profileData!['name'] ?? 'Kullanıcı',
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                profileData!['location'] ?? 'Bilinmiyor',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const SettingsScreen(),
+                                            ),
+                                          );
+                                          if (mounted) _loadProfile();
+                                        },
+                                        icon: const Icon(Icons.settings,
+                                            color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      // --- İstatistikler ---
+                      // istatistikler
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                           child: Row(
                             children: [
                               Expanded(
@@ -126,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   title: 'Arkadaş',
                                   value: friends.length.toString(),
                                   icon: Icons.people_alt_rounded,
-                                  gradient: const [Color(0xFFFF9A9E), Color(0xFFFAD0C4)],
+                                  gradient: const [Color(0xFF56CCF2), Color(0xFF2F80ED)],
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -137,28 +206,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ? '—'
                                       : _ageFromBirthDate(profileData!['birthDate']).toString(),
                                   icon: Icons.cake_rounded,
-                                  gradient: const [Color(0xFFA18CD1), Color(0xFFFBC2EB)],
+                                  gradient: const [Color(0xFF11998E), Color(0xFF38EF7D)],
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      // --- Hakkında ---
+                      // hakkında
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.all(16),
                           child: GlassCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: const [
-                                    Text('Hakkında',
-                                        style: TextStyle(
-                                            fontSize: 18, fontWeight: FontWeight.w800)),
-                                    Spacer(),
-                                  ],
+                                const Text(
+                                  'Hakkında',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                                 const SizedBox(height: 12),
                                 AboutRow(
@@ -176,11 +244,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
-                      const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                      // --- Arkadaş önizleme ---
+                      // arkadaş önizleme
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.all(16),
                           child: FriendsPreviewCard(
                             friends: friends,
                             onTapAll: () {
@@ -194,11 +261,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
-                      const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                      // --- İlgi alanları ---
+                      // ilgi alanları
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.all(16),
                           child: InterestsCard(
                             interests: (profileData!['interests'] as List?) ?? [],
                           ),
@@ -222,27 +288,55 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.person_outline, size: 64, color: Colors.black38),
-            const SizedBox(height: 12),
-            const Text('Profil verisi bulunamadı', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: onOpenSettings,
-              icon: const Icon(Icons.settings),
-              label: const Text('Ayarları Aç'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEA5455),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.black : Colors.white).withOpacity(0.6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white30, width: 1),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.person_outline,
+                      size: 72, color: Colors.white70),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Profil verisi bulunamadı',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: onOpenSettings,
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Ayarları Aç'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEA5455),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

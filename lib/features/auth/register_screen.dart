@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -199,21 +200,40 @@ class _RegisterScreenState extends State<RegisterScreen>
     setState(() => _isLoading = false);
 
     if (res['success'] == true) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userId', res['user']['_id']);
-      // başarı -> adım 1
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 380),
-          pageBuilder: (_, __, ___) => const ProfileStep1Screen(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-        ),
-      );
-    } else {
-      await _error(res['message'] ?? 'Bir hata oluştu.');
-    }
+  // 🔹 Firebase tarafında da oturum aç (backend zaten user'ı oluşturdu)
+  try {
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email.toLowerCase(),
+      password: password,
+    );
+  } on FirebaseAuthException catch (e) {
+    // Burada kullanıcıyı durdurmuyoruz; sadece bilgi veriyoruz.
+    debugPrint('Firebase sign-in after register failed: ${e.code}');
+    // İstersen kullanıcıya ufak bir bilgi penceresi gösterebilirsin:
+    // await _info('Hesap oluşturuldu fakat Firebase oturumu açılamadı: ${e.code}');
+  } catch (e) {
+    debugPrint('Firebase sign-in unknown error: $e');
+  }
+
+  // (Opsiyonel) SharedPreferences’e userId yazmışsın; AuthService.register zaten kaydediyor.
+  // Yine de mevcut satırın kalabilir:
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('userId', res['user']['_id']);
+
+  // ✅ Profil adımlarına geç
+  if (!mounted) return;
+  Navigator.pushReplacement(
+    context,
+    PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 380),
+      pageBuilder: (_, __, ___) => const ProfileStep1Screen(),
+      transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+    ),
+  );
+} else {
+  await _error(res['message'] ?? 'Bir hata oluştu.');
+}
+
   }
 
   // -------- UI --------

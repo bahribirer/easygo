@@ -98,241 +98,282 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ===== etkinlik sheet
   Future<void> _openCreateEventSheet() async {
-    final mq = MediaQuery.of(context);
-    final types = <String>['Kahve', 'Yemek', 'Sohbet', 'Ders Çalışma', 'Spor', 'Sinema'];
-    final rootContext = context;
+  final mq = MediaQuery.of(context);
+  final types = <String>['Kahve', 'Yemek', 'Sohbet', 'Ders Çalışma', 'Spor', 'Sinema'];
+  final rootContext = context;
 
-    String? type;
-    DateTime? dateTime;
-    String? city;
-    bool sending = false;
+  String? type;
+  DateTime? dateTime;
+  String? city;
+  int? selectedSlot;
+  bool sending = false;
 
-    if (_todayCount >= 3) {
-      _limitSnack();
-      return;
-    }
+  final timeSlots = {
+    0: const ['09:00', '12:00'],
+    1: const ['15:00', '18:00'],
+    2: const ['21:00', '00:00'],
+  };
 
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return FractionallySizedBox(
-          heightFactor: 0.92,
-          child: StatefulBuilder(
-            builder: (context, setModal) {
-              Future<void> pickDateTime() async {
-                final now = DateTime.now();
-                final pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: now.add(const Duration(days: 1)),
-                  firstDate: now,
-                  lastDate: now.add(const Duration(days: 365)),
-                  helpText: 'Tarih Seç',
-                  cancelText: 'İptal',
-                  confirmText: 'Tamam',
-                );
-                if (pickedDate == null) return;
-                final pickedTime = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                  helpText: 'Saat Seç',
-                  cancelText: 'İptal',
-                  confirmText: 'Tamam',
-                );
-                if (pickedTime == null) return;
-                setModal(() {
-                  dateTime = DateTime(
-                    pickedDate.year, pickedDate.month, pickedDate.day,
-                    pickedTime.hour, pickedTime.minute,
-                  );
-                });
+  if (_todayCount >= 3) {
+    _limitSnack();
+    return;
+  }
+
+  final result = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) {
+      return FractionallySizedBox(
+        heightFactor: 0.92,
+        child: StatefulBuilder(
+          builder: (context, setModal) {
+            Future<void> pickDate() async {
+              final now = DateTime.now();
+              final pickedDate = await showDatePicker(
+                context: context,
+                initialDate: now.add(const Duration(days: 1)),
+                firstDate: now,
+                lastDate: now.add(const Duration(days: 90)),
+                selectableDayPredicate: (day) {
+                  // sadece cumartesi (6) ve pazar (7) seçilebilir
+                  return day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
+                },
+                helpText: 'Tarih Seç',
+                cancelText: 'İptal',
+                confirmText: 'Tamam',
+              );
+              if (pickedDate == null) return;
+              setModal(() {
+                dateTime = pickedDate;
+              });
+            }
+
+            final canSend = type != null && dateTime != null && selectedSlot != null && city != null && !sending;
+
+            Future<void> submit() async {
+              if (!canSend) return;
+
+              await _refreshTodayCount();
+              if (_todayCount >= 3) {
+                _limitSnack();
+                return;
               }
 
-              final canSend = type != null && dateTime != null && city != null && !sending;
+              setModal(() => sending = true);
+              try {
+                final slot = timeSlots[selectedSlot]!;
+                final res = await EventService.createEvent(
+                  type: type!,
+                  city: city!,
+                  dateTime: DateTime(
+                    dateTime!.year,
+                    dateTime!.month,
+                    dateTime!.day,
+                    int.parse(slot[0].split(':')[0]),
+                  ), // başlangıç saatini gönderiyoruz
+                );
 
-              Future<void> submit() async {
-                if (!canSend) return;
+                if (!context.mounted) return;
 
-                await _refreshTodayCount();
-                if (_todayCount >= 3) {
-                  _limitSnack();
-                  return;
-                }
-
-                setModal(() => sending = true);
-                try {
-                  final res = await EventService.createEvent(
-                    type: type!,
-                    city: city!,
-                    dateTime: dateTime!,
-                  );
-
-                  if (!context.mounted) return;
-
-                  if (res['success'] == true) {
-                    Future.microtask(() {
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop(true);
-                      }
-                    });
-                  } else {
-                    setModal(() => sending = false);
-                    await showError(context, 'Gönderilemedi', res['message']?.toString());
-                  }
-                } catch (e) {
+                if (res['success'] == true) {
+                  Future.microtask(() {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop(true);
+                    }
+                  });
+                } else {
                   setModal(() => sending = false);
-                  if (!context.mounted) return;
-                  await showError(context, 'Hata', e.toString());
+                  await showError(context, 'Gönderilemedi', res['message']?.toString());
                 }
+              } catch (e) {
+                setModal(() => sending = false);
+                if (!context.mounted) return;
+                await showError(context, 'Hata', e.toString());
               }
+            }
 
-              return Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 24,
-                      offset: const Offset(0, -6),
-                    )
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      16, 10, 16,
-                      16 + mq.viewInsets.bottom + mq.padding.bottom,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 44, height: 5,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 24,
+                    offset: const Offset(0, -6),
+                  )
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    20, 10, 20,
+                    20 + mq.viewInsets.bottom + mq.padding.bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 44, height: 5,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(999),
                           ),
                         ),
-                        Row(
-                          children: const [
-                            Icon(Icons.event_outlined, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Etkinlik Oluştur',
-                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+                      ),
+                      Row(
+                        children: const [
+                          Icon(Icons.event_outlined, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Etkinlik Oluştur',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                        Text('Etkinlik Tipi',
-                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
-                        const SizedBox(height: 8),
-                        SheetField(
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: type,
-                              isExpanded: true,
-                              hint: const Text('Seçiniz'),
-                              items: types.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                              onChanged: (v) => setModal(() => type = v),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        Text('Tarih & Saat',
-                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
-                        const SizedBox(height: 8),
-                        InkWell(
+                      // Tip Seçimi
+                      Text('Etkinlik Tipi',
+                          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(12),
-                          onTap: pickDateTime,
-                          child: SheetField(
-                            height: 52,
-                            child: Row(
-                              children: [
-                                const Icon(Icons.schedule, color: Colors.black54),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    dateTime == null
-                                        ? 'Tarih & saat seçin'
-                                        : '${_pad(dateTime!.day)}.${_pad(dateTime!.month)}.${dateTime!.year}  •  ${_pad(dateTime!.hour)}:${_pad(dateTime!.minute)}',
-                                    style: TextStyle(
-                                      color: dateTime == null ? Colors.black54 : Colors.black87,
-                                      fontWeight: dateTime == null ? FontWeight.w400 : FontWeight.w600,
-                                    ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: type,
+                            isExpanded: true,
+                            hint: const Text('Seçiniz'),
+                            items: types.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                            onChanged: (v) => setModal(() => type = v),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Tarih
+                      Text('Tarih (sadece Cumartesi & Pazar)',
+                          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: pickDate,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today, color: Colors.black54),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  dateTime == null
+                                      ? 'Tarih seçin'
+                                      : '${dateTime!.day}.${dateTime!.month}.${dateTime!.year}',
+                                  style: TextStyle(
+                                    color: dateTime == null ? Colors.black54 : Colors.black87,
+                                    fontWeight: dateTime == null ? FontWeight.w400 : FontWeight.w600,
                                   ),
                                 ),
-                                const Icon(Icons.edit_calendar_outlined, color: Colors.black38),
-                              ],
-                            ),
+                              ),
+                              const Icon(Icons.edit_calendar_outlined, color: Colors.black38),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 14),
+                      ),
+                      const SizedBox(height: 16),
 
-                        Text('Şehir',
-                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
-                        const SizedBox(height: 8),
-                        SheetField(
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: city,
-                              isExpanded: true,
-                              hint: const Text('İl seçiniz'),
-                              items: turkishCities
-                                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                                  .toList(),
-                              onChanged: (v) => setModal(() => city = v),
-                            ),
-                          ),
-                        ),
+                      // Saat dilimleri
+                      Text('Saat Aralığı',
+                          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 10,
+                        children: timeSlots.entries.map((entry) {
+                          final idx = entry.key;
+                          final label = "${entry.value[0]} - ${entry.value[1]}";
+                          final selected = selectedSlot == idx;
+                          return ChoiceChip(
+                            label: Text(label),
+                            selected: selected,
+                            onSelected: (_) => setModal(() => selectedSlot = idx),
+                            selectedColor: Colors.red.shade100,
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
 
-                        const SizedBox(height: 18),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: (type != null && dateTime != null && city != null && !sending)
-                                ? submit
-                                : null,
-                            icon: sending
-                                ? const SizedBox(
-                                    width: 18, height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.send_rounded),
-                            label: Text(sending ? 'Gönderiliyor…' : 'Havuza Gönder'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              elevation: 0,
-                            ),
+                      // Şehir
+                      Text('Şehir',
+                          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: city,
+                            isExpanded: true,
+                            hint: const Text('İl seçiniz'),
+                            items: turkishCities
+                                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                .toList(),
+                            onChanged: (v) => setModal(() => city = v),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: canSend ? submit : null,
+                          icon: sending
+                              ? const SizedBox(
+                                  width: 18, height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.send_rounded),
+                          label: Text(sending ? 'Gönderiliyor…' : 'Havuza Gönder'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
-          ),
-        );
-      },
-    );
+              ),
+            );
+          },
+        ),
+      );
+    },
+  );
 
-    if (!mounted) return;
-    if (result == true) {
-      await showSuccess(rootContext, 'Etkinlik havuza gönderildi.');
-      await _refreshPending();
-      await _refreshTodayCount();
-    }
+  if (!mounted) return;
+  if (result == true) {
+    await showSuccess(rootContext, 'Etkinlik havuza gönderildi.');
+    await _refreshPending();
+    await _refreshTodayCount();
   }
+}
 
   void _limitSnack() {
     showWarning(context, 'Günlük limit doldu', 'Bugün en fazla 3 buluşma oluşturabilirsin.');
@@ -343,7 +384,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
-    final w = mq.size.width;
     final hasPending = _pendingList.isNotEmpty;
 
     return Scaffold(
@@ -356,8 +396,6 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Color(0xFFFF6F61), Color(0xFFFF9472)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
                 ),
                 boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
@@ -372,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       await Navigator.push(
                         context, MaterialPageRoute(builder: (_) => const InboxScreen()),
                       );
-                      // Inbox’tan dönünce badge’i sıfırlamak istersen:
+                      // Inbox’tan dönünce badge’i istersen sıfırla:
                       InboxBadge.notifier.value = 0;
                     },
                     borderRadius: BorderRadius.circular(999),
@@ -440,7 +478,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  EventButton(onTap: _openCreateEventSheet),
                 ],
               ),
             ),
@@ -476,68 +513,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           ),
                         )
-                      : Column(
-                          children: [
-                            Expanded(
-                              child: Center(
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    Container(
-                                      width: w * .66,
-                                      height: w * .66,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: const RadialGradient(
-                                          colors: [Colors.orangeAccent, Colors.white]),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.deepOrangeAccent.withOpacity(.18),
-                                            blurRadius: 26)
-                                        ],
-                                      ),
-                                    ),
-                                    const CircleAvatar(
-                                      radius: 42,
-                                      backgroundImage: AssetImage('assets/user_center.jpg')),
-                                    const Positioned(
-                                      top: 0,
-                                      child: CircleAvatar(radius: 20, backgroundImage: AssetImage('assets/user1.jpg'))),
-                                    const Positioned(
-                                      bottom: 0,
-                                      child: CircleAvatar(radius: 20, backgroundImage: AssetImage('assets/user2.jpg'))),
-                                    const Positioned(
-                                      left: 0,
-                                      child: CircleAvatar(radius: 20, backgroundImage: AssetImage('assets/user3.jpg'))),
-                                    const Positioned(
-                                      right: 0,
-                                      child: CircleAvatar(radius: 20, backgroundImage: AssetImage('assets/user4.jpg'))),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 22.0),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'Ana Sayfadan Yeni Bir Buluşma Oluştur!',
-                                    style: TextStyle(
-                                      fontSize: 22, fontWeight: FontWeight.w900, color: Colors.deepOrange),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    'Hemen havuza düş; birlikte güzel vakit geçirebileceğin insanlarla tanış.',
-                                    style: TextStyle(fontSize: 15, color: Colors.black87),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                          ],
+                      : _EmptyEventsState(
+                          onCreateTap: _openCreateEventSheet,
+                          todayCount: _todayCount,
                         ),
             ),
           ],
@@ -596,5 +574,156 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+}
+
+/// Profesyonel boş-durum görünümü (hiç etkinlik yokken)
+class _EmptyEventsState extends StatelessWidget {
+  final VoidCallback onCreateTap;
+  final int todayCount;
+
+  const _EmptyEventsState({
+    required this.onCreateTap,
+    required this.todayCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  // Dekoratif arka plan + ikon
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      _Blob(size: 240, colors: [
+                        Colors.orange.withOpacity(0.18),
+                        Colors.deepOrange.withOpacity(0.10),
+                      ]),
+                      Container(
+                        height: 88,
+                        width: 88,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF6F61), Color(0xFFFF9472)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.deepOrange.withOpacity(0.25),
+                              blurRadius: 22,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.event_available_rounded, color: Colors.white, size: 42),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Henüz bir buluşma yok',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? Colors.white : const Color(0xFF2B2B2B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Hemen bir etkinlik oluştur; birlikte güzel vakit geçirebileceğin insanlarla tanış.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: todayCount >= 3 ? null : onCreateTap,
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(todayCount >= 3 ? 'Günlük limit doldu' : 'Etkinlik Oluştur'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepOrange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (todayCount >= 3)
+                    Text(
+                      'Bugün en fazla 3 buluşma oluşturabilirsin.',
+                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.redAccent),
+                    ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Basit dekoratif blob (canvas painter ile)
+class _Blob extends StatelessWidget {
+  final double size;
+  final List<Color> colors;
+  const _Blob({required this.size, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _BlobPainter(colors),
+      size: Size.square(size),
+    );
+  }
+}
+
+class _BlobPainter extends CustomPainter {
+  final List<Color> colors;
+  _BlobPainter(this.colors);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: colors,
+        center: Alignment.center,
+        radius: 0.85,
+      ).createShader(rect);
+
+    final path = Path()
+      ..moveTo(size.width * .50, 0)
+      ..cubicTo(size.width * .85, size.height * .05, size.width * .95, size.height * .35, size.width * .90, size.height * .55)
+      ..cubicTo(size.width * .85, size.height * .80, size.width * .55, size.height * .95, size.width * .40, size.height * .90)
+      ..cubicTo(size.width * .15, size.height * .80, size.width * .05, size.height * .45, size.width * .18, size.height * .30)
+      ..cubicTo(size.width * .28, size.height * .12, size.width * .45, size.height * .02, size.width * .50, 0)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BlobPainter oldDelegate) {
+    return oldDelegate.colors != colors;
   }
 }

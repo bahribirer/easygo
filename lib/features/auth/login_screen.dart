@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
@@ -129,24 +130,30 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   // ----------------- LOGIN -----------------
   Future<void> _handleLogin() async {
-    FocusScope.of(context).unfocus();
+  FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) {
-      await _showInfoDialog('Lütfen e-posta ve şifre alanlarını düzgün doldurun.');
-      return;
-    }
+  if (!_formKey.currentState!.validate()) {
+    await _showInfoDialog('Lütfen e‑posta ve şifre alanlarını düzgün doldurun.');
+    return;
+  }
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    final res = await AuthService.login(
-      universityEmail: emailController.text.trim(),
+  try {
+    // 1) Firebase ile giriş
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: emailController.text.trim().toLowerCase(),
       password: passwordController.text,
     );
+
+    // 2) Mevcut Firebase oturumundan idToken alıp backend’ten JWT çek
+    final res = await AuthService.loginUsingCurrentFirebaseUser();
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (res['success'] == true) {
+      // ✅ Başarılı → Home'a geç
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -156,9 +163,41 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         ),
       );
     } else {
-      await _showErrorDialog(res['message'] ?? 'Bir hata oluştu.');
+      await _showErrorDialog(res['message'] ?? 'Giriş başarısız.');
     }
+  } on FirebaseAuthException catch (e) {
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    String msg;
+    switch (e.code) {
+      case 'invalid-credential':
+      case 'wrong-password':
+        msg = 'E‑posta veya şifre hatalı.';
+        break;
+      case 'user-not-found':
+        msg = 'Bu e‑posta ile kullanıcı bulunamadı.';
+        break;
+      case 'too-many-requests':
+        msg = 'Çok fazla deneme. Biraz sonra tekrar deneyin.';
+        break;
+      case 'network-request-failed':
+        msg = 'Ağ hatası. Bağlantınızı kontrol edin.';
+        break;
+      case 'invalid-email':
+        msg = 'Geçersiz e‑posta adresi.';
+        break;
+      default:
+        msg = 'Giriş yapılamadı: ${e.code}';
+    }
+    await _showErrorDialog(msg);
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    await _showErrorDialog('Beklenmeyen hata: $e');
   }
+}
+
 
   // ----------------- UI -----------------
   @override
