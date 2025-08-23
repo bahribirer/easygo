@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easygo/core/service/user_profile_service.dart';
 import 'package:easygo/features/welcome/welcome_screen.dart';
 import 'package:easygo/features/profile/steps/profile_step_common.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class ProfileStep4Screen extends StatefulWidget {
   const ProfileStep4Screen({super.key});
@@ -22,6 +23,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
 
   // ---------- Image picking ----------
   Future<void> _pickImageSource() async {
+    final loc = AppLocalizations.of(context)!;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Colors.white,
@@ -36,24 +38,26 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: Colors.black12,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const Text('Fotoğraf Kaynağı',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                Text(loc.photoSource,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 16)),
                 const SizedBox(height: 8),
                 ListTile(
                   leading: const Icon(Icons.photo_library_outlined),
-                  title: const Text('Galeri'),
+                  title: Text(loc.gallery),
                   onTap: () => Navigator.pop(ctx, ImageSource.gallery),
                 ),
                 ListTile(
                   leading: const Icon(Icons.photo_camera_outlined),
-                  title: const Text('Kamera'),
+                  title: Text(loc.camera),
                   onTap: () => Navigator.pop(ctx, ImageSource.camera),
                 ),
                 const SizedBox(height: 6),
@@ -71,7 +75,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
     final picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(
       source: source,
-      imageQuality: 85, // hafif sıkıştırma
+      imageQuality: 85,
       maxWidth: 1500,
     );
     if (pickedFile != null && mounted) {
@@ -81,6 +85,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
 
   // ---------- Success dialog ----------
   Future<void> _showSuccessDialog() async {
+    final loc = AppLocalizations.of(context)!;
     return showDialog(
       context: context,
       barrierDismissible: false,
@@ -91,7 +96,6 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // gradient halka + check icon
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
@@ -103,17 +107,19 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                 child: const CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.check_rounded, size: 34, color: Color(0xFF43A047)),
+                  child: Icon(Icons.check_rounded,
+                      size: 34, color: Color(0xFF43A047)),
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
-                'Kayıt Tamamlandı!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              Text(
+                loc.registrationCompleted,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 6),
               Text(
-                'Hesabın hazır. Keyifle keşfetmeye başlayabilirsin 🎉',
+                loc.registrationCompletedSubtitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey.shade700),
               ),
@@ -132,10 +138,11 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                     minimumSize: const Size.fromHeight(48),
                     backgroundColor: const Color(0xFF4CAF50),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
-                  child: const Text('Uygulamaya Başla'),
+                  child: Text(loc.startApp),
                 ),
               ),
             ],
@@ -155,8 +162,9 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
       final userId = prefs.getString('userId');
       if (userId == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Kullanıcı ID bulunamadı')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorMissingInfoMessage)),
+        );
         return;
       }
 
@@ -173,7 +181,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
         await _showSuccessDialog();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Hata oluştu')),
+          SnackBar(content: Text(result['message'] ?? AppLocalizations.of(context)!.genericError)),
         );
       }
     } finally {
@@ -181,13 +189,13 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
     }
   }
 
-  // ---------- Skip (do it later) ----------
   void _skipForNow() {
     _showSuccessDialog();
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final padBottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
@@ -212,7 +220,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                           const SizedBox(height: 10),
 
                           Text(
-                            'Profil Fotoğrafın',
+                            loc.step4Title, // "Profil Fotoğrafın"
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
@@ -221,12 +229,12 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Gülümsemeyi unutma! Fotoğrafın ilk izlenim için çok önemli.',
+                            loc.step4Subtitle,
                             style: TextStyle(color: Colors.grey.shade700),
                           ),
                           const SizedBox(height: 24),
 
-                          // Avatar + çerçeve + edit butonu
+                          // Avatar + edit
                           Center(
                             child: Stack(
                               alignment: Alignment.bottomRight,
@@ -252,10 +260,13 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                                     child: CircleAvatar(
                                       radius: 66,
                                       backgroundColor: Colors.grey.shade200,
-                                      backgroundImage:
-                                          _selectedImage != null ? FileImage(_selectedImage!) : null,
+                                      backgroundImage: _selectedImage != null
+                                          ? FileImage(_selectedImage!)
+                                          : null,
                                       child: _selectedImage == null
-                                          ? Icon(Icons.person, size: 64, color: Colors.grey.shade400)
+                                          ? Icon(Icons.person,
+                                              size: 64,
+                                              color: Colors.grey.shade400)
                                           : null,
                                     ),
                                   ),
@@ -266,8 +277,9 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                                   elevation: 2,
                                   child: IconButton(
                                     onPressed: _pickImageSource,
-                                    icon: const Icon(Icons.edit, color: Colors.deepOrange),
-                                    tooltip: 'Fotoğrafı seç',
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.deepOrange),
+                                    tooltip: loc.photoSelect, // "Fotoğrafı seç"
                                   ),
                                 ),
                               ],
@@ -276,14 +288,10 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
 
                           const SizedBox(height: 26),
 
-                          const StepHintCard(
-                            text:
-                                'Net ve aydınlık bir fotoğraf seç. Yüzün görünür olsun, bu seni daha bulunabilir kılar.',
-                          ),
+                          StepHintCard(text: loc.step4Hint),
 
                           const Spacer(),
 
-                          // Actions
                           Row(
                             children: [
                               Expanded(
@@ -296,9 +304,9 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                   ),
-                                  child: const Text(
-                                    'Sonra Yapacağım',
-                                    style: TextStyle(
+                                  child: Text(
+                                    loc.skipForNow,
+                                    style: const TextStyle(
                                       color: Color(0xFFFB8C00),
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -308,7 +316,8 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: _selectedImage != null && !_saving ? _save : null,
+                                  onPressed:
+                                      _selectedImage != null && !_saving ? _save : null,
                                   style: ElevatedButton.styleFrom(
                                     minimumSize: const Size.fromHeight(52),
                                     backgroundColor: const Color(0xFFEA5455),
@@ -320,11 +329,13 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                                   ),
                                   icon: _saving
                                       ? const SizedBox(
-                                          height: 18, width: 18,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2, color: Colors.white),
                                         )
                                       : const Icon(Icons.check_rounded),
-                                  label: Text(_saving ? 'Yükleniyor…' : 'Tamamla'),
+                                  label: Text(_saving ? loc.uploading : loc.complete),
                                 ),
                               ),
                             ],

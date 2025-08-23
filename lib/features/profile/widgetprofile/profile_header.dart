@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // 🔹 eklendi
 
 class ProfileHeader extends StatelessWidget {
   final String name;
@@ -23,6 +24,8 @@ class ProfileHeader extends StatelessWidget {
     final expandedH = (screenH * 0.28).clamp(220.0, 300.0);
     const minAvatar = 36.0;
     const maxAvatar = 64.0;
+
+    final loc = AppLocalizations.of(context)!; // 🔹 eklendi
 
     return SliverAppBar(
       pinned: true,
@@ -59,7 +62,7 @@ class ProfileHeader extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.settings_outlined, color: Colors.white),
                   onPressed: onTapSettings,
-                  tooltip: 'Ayarlar',
+                  tooltip: loc.settings, // 🔹 çevrildi
                 ),
               ),
               Positioned(

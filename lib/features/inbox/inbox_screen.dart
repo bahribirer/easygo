@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easygo/core/inbox_badge.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key});
@@ -84,17 +85,19 @@ class _InboxScreenState extends State<InboxScreen> {
     }
   }
 
-  String _prettyTime(DateTime? dt) {
+  String _prettyTime(DateTime? dt, AppLocalizations loc) {
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'şimdi';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} dk önce';
-    if (diff.inHours < 24) return '${diff.inHours} sa önce';
-    return '${diff.inDays} gün önce';
+    if (diff.inMinutes < 1) return loc.timeNow;
+    if (diff.inMinutes < 60) return loc.timeMinutes(diff.inMinutes);
+    if (diff.inHours < 24) return loc.timeHours(diff.inHours);
+    return loc.timeDays(diff.inDays);
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     if (_userId == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -109,17 +112,17 @@ class _InboxScreenState extends State<InboxScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Gelen Kutusu"),
+        title: Text(loc.inboxTitle),
         actions: [
           IconButton(
             onPressed: _markAllRead,
             icon: const Icon(Icons.done_all),
-            tooltip: "Hepsini okundu yap",
+            tooltip: loc.inboxMarkAllRead,
           ),
           IconButton(
             onPressed: _deleteAll,
             icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: "Tümünü sil",
+            tooltip: loc.inboxDeleteAll,
           ),
         ],
       ),
@@ -130,7 +133,7 @@ class _InboxScreenState extends State<InboxScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snap.hasData || snap.data!.docs.isEmpty) {
-            return const Center(child: Text("Henüz bildirim yok 💌"));
+            return Center(child: Text(loc.inboxEmpty));
           }
 
           final docs = snap.data!.docs;
@@ -170,7 +173,9 @@ class _InboxScreenState extends State<InboxScreen> {
                         fontWeight:
                             read ? FontWeight.normal : FontWeight.bold),
                   ),
-                  subtitle: Text("$body\n${_prettyTime(createdAt)}"),
+                  subtitle: Text(
+                    "$body\n${_prettyTime(createdAt, loc)}",
+                  ),
                   isThreeLine: true,
                   onTap: () {
                     docs[i].reference.update({'read': true});

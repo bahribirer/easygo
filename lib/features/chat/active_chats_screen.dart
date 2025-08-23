@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class ActiveChatsScreen extends StatelessWidget {
   const ActiveChatsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Aktif Sohbetler"),
+        title: Text(loc.activeChatsTitle),
         backgroundColor: Colors.white,
         foregroundColor: Colors.red,
         elevation: 0,
       ),
       backgroundColor: Colors.white,
-      body: const Center(
+      body: Center(
         child: Text(
-          "Şu an aktif sohbetiniz bulunmamaktadır.",
-          style: TextStyle(fontSize: 16, color: Colors.black54),
+          loc.noActiveChatsMessage,
+          style: const TextStyle(fontSize: 16, color: Colors.black54),
         ),
       ),
     );

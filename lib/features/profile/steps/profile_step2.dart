@@ -6,6 +6,7 @@ import 'package:easygo/helpers/interests_helper.dart'; // allInterests
 import 'package:easygo/core/service/user_profile_service.dart';
 import 'package:easygo/features/profile/steps/profile_step3.dart';
 import 'package:easygo/features/profile/steps/profile_step_common.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class ProfileStep2Screen extends StatefulWidget {
   const ProfileStep2Screen({super.key});
@@ -27,10 +28,18 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
       CurvedAnimation(parent: _ctaCtrl, curve: Curves.easeOutBack);
 
   List<String> get _filtered {
-    if (_query.trim().isEmpty) return allInterests;
-    final q = _query.toLowerCase();
-    return allInterests.where((e) => e.toLowerCase().contains(q)).toList();
-  }
+  final keys = InterestsHelper.keys; // 🔹 sabit key listesi
+  if (_query.trim().isEmpty) return keys;
+
+  final q = _query.toLowerCase();
+  return keys.where((k) {
+    final label = InterestsHelper.label(context, k).toLowerCase();
+    return label.contains(q);
+  }).toList();
+}
+
+
+
 
   void _toggleInterest(String interest) {
     setState(() {
@@ -52,8 +61,9 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
 
       if (userId == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Kullanıcı ID bulunamadı')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorMissingInfoMessage)),
+        );
         return;
       }
 
@@ -75,7 +85,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['message'] ?? 'Hata oluştu')),
+          SnackBar(content: Text(res['message'] ?? AppLocalizations.of(context)!.genericError)),
         );
       }
     } finally {
@@ -91,6 +101,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final accent = const Color(0xFFEA5455);
     final bgGrad = const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
 
@@ -137,11 +148,11 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Ortak header + adım etiketi
-                  const StepHeader(
+                  StepHeader(
                     progress: .50,
                     trailing: Text(
-                      'Adım 2 / 4',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      loc.stepCount(2, 4), // Adım 2 / 4
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -156,10 +167,9 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const StepSectionTitle(
-                                  title: 'İlgi Alanları',
-                                  subtitle:
-                                      'Hayatını renklendiren tutkularını paylaş. En az 5 ilgi alanı seç.',
+                                StepSectionTitle(
+                                  title: loc.interestsTitle,
+                                  subtitle: loc.interestsSubtitle,
                                 ),
                                 const SizedBox(height: 12),
 
@@ -171,20 +181,20 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
                                         onChanged: (v) => setState(() => _query = v),
                                         decoration: InputDecoration(
                                           prefixIcon: const Icon(Icons.search),
-                                          hintText: 'Ara (ör. Koşu, Müzik, Yapay Zeka)…',
+                                          hintText: loc.searchHint,
                                           border: OutlineInputBorder(
                                             borderRadius: BorderRadius.circular(12),
                                           ),
                                           filled: true,
                                           fillColor: Colors.white,
                                           contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 12),
+                                              horizontal: 12, vertical: 12),
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Tooltip(
-                                      message: 'Tümünü temizle',
+                                      message: loc.clearAll,
                                       child: IconButton(
                                         onPressed: selectedInterests.isEmpty
                                             ? null
@@ -205,37 +215,39 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
                                 const SizedBox(height: 12),
 
                                 // Interest chips
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: _filtered.map((interest) {
-                                    final selected =
-                                        selectedInterests.contains(interest);
-                                    return FilterChip(
-                                      label: Text(interest),
-                                      selected: selected,
-                                      onSelected: (_) => _toggleInterest(interest),
-                                      labelStyle: TextStyle(
-                                        color: selected ? accent : null,
-                                        fontWeight:
-                                            selected ? FontWeight.w700 : FontWeight.w500,
-                                      ),
-                                      selectedColor: accent.withOpacity(.14),
-                                      checkmarkColor: accent,
-                                      backgroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(999),
-                                        side: BorderSide(
-                                          color: selected
-                                              ? accent.withOpacity(.4)
-                                              : Colors.black.withOpacity(.08),
-                                        ),
-                                      ),
-                                      materialTapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    );
-                                  }).toList(),
-                                ),
+                                // Interest chips
+Wrap(
+  spacing: 8,
+  runSpacing: 8,
+  children: _filtered.map((key) {
+    final selected = selectedInterests.contains(key);
+    final label = InterestsHelper.label(context, key);
+
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => _toggleInterest(key),
+      labelStyle: TextStyle(
+        color: selected ? accent : null,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      selectedColor: accent.withOpacity(.14),
+      checkmarkColor: accent,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: BorderSide(
+          color: selected
+              ? accent.withOpacity(.4)
+              : Colors.black.withOpacity(.08),
+        ),
+      ),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }).toList(),
+),
+
+
                               ],
                             ),
                           ),
@@ -256,7 +268,7 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
                           ),
                         ),
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Geri'),
+                        child: Text(loc.backButton),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -281,9 +293,9 @@ class _ProfileStep2ScreenState extends State<ProfileStep2Screen>
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text(
-                                    'Devam Et',
-                                    style: TextStyle(
+                                : Text(
+                                    loc.continueButton,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 16,
                                     ),
@@ -318,6 +330,7 @@ class _MinInfoBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final color = ok ? Colors.green : Colors.orange.shade700;
     final icon = ok ? Icons.check_circle : Icons.info_outline;
 
@@ -335,8 +348,8 @@ class _MinInfoBar extends StatelessWidget {
           Expanded(
             child: Text(
               ok
-                  ? 'Harika! $count ilgi alanı seçtin.'
-                  : 'En az 5 ilgi alanı seç. Kalan: $remaining',
+                  ? loc.minInfoOk(count)
+                  : loc.minInfoNotEnough(remaining),
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: color,

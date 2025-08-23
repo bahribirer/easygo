@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 /// Adım başlığı + yüzde çemberi (0..1)
 class StepHeader extends StatelessWidget {
   final double progress; // 0..1
-  final String title;
+  final String? title;
   final Color color;
   final Widget? leading;  // opsiyonel özel ikon/leading
   final Widget? trailing; // opsiyonel sağdaki ekstra aksiyon
@@ -11,7 +12,7 @@ class StepHeader extends StatelessWidget {
   const StepHeader({
     super.key,
     required this.progress,
-    this.title = 'Profili Tamamla',
+    this.title,
     this.color = const Color(0xFFEA5455),
     this.leading,
     this.trailing,
@@ -19,6 +20,7 @@ class StepHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final p = progress.clamp(0.0, 1.0);
     final pct = (p * 100).round();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -32,7 +34,7 @@ class StepHeader extends StatelessWidget {
                 Icon(Icons.flag_rounded, color: color),
             const SizedBox(width: 8),
             Text(
-              title,
+              title ?? loc.completeProfile, // ✅ Çeviri
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -62,7 +64,7 @@ class StepHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '%$pct',
+                  '${pct}${loc.percentSign}', // ✅ Çeviri
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ],

@@ -9,6 +9,7 @@ import 'package:easygo/features/profile/edit/profile_edit_screen.dart';
 import 'package:easygo/core/service/user_settings_service.dart';
 import 'package:easygo/core/service/feedback_service.dart';
 import 'package:easygo/core/service/auth_service.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // ✅ eklendi
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -103,7 +104,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isDeleting = true);
 
     try {
-      // ✅ Anket backend’e gönderiliyor
       await FeedbackService.sendDeleteAccountFeedback(
           reasons: reasons, note: note);
 
@@ -117,8 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Hesap silinemedi. Lütfen tekrar deneyin.')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.accountNotDeleted)),
         );
       }
     } catch (e) {
@@ -132,116 +131,103 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showDeleteSurvey() async {
-  final selectedReasons = <String>{};
-  final allReasons = <String>[
-    "Uygulama beklentimi karşılamadı",
-    "Çok fazla bildirim alıyorum",
-    "Gizlilik endişeleri",
-    "Başka bir hesap kullanıyorum",
-  ];
-  final noteCtrl = TextEditingController();
+    final loc = AppLocalizations.of(context)!;
+    final selectedReasons = <String>{};
+    final allReasons = <String>[
+      loc.deleteReason1,
+      loc.deleteReason2,
+      loc.deleteReason3,
+      loc.deleteReason4,
+    ];
+    final noteCtrl = TextEditingController();
 
-  final result = await showModalBottomSheet<Map<String, dynamic>>(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (ctx) {
-      return Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-        ),
-        child: StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Hesabınızı neden silmek istiyorsunuz?",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 12),
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setModalState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(loc.deleteSurveyTitle,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 12),
 
-                // Çoklu seçim – Set ile güvenli
-                ...allReasons.map((reason) {
-                  final checked = selectedReasons.contains(reason);
-                  return CheckboxListTile(
-                    value: checked,
-                    title: Text(reason),
-                    onChanged: (val) {
-                      setModalState(() {
-                        if (val == true) {
-                          selectedReasons.add(reason);
-                        } else {
-                          selectedReasons.remove(reason);
-                        }
+                  ...allReasons.map((reason) {
+                    final checked = selectedReasons.contains(reason);
+                    return CheckboxListTile(
+                      value: checked,
+                      title: Text(reason),
+                      onChanged: (val) {
+                        setModalState(() {
+                          if (val == true) {
+                            selectedReasons.add(reason);
+                          } else {
+                            selectedReasons.remove(reason);
+                          }
+                        });
+                      },
+                    );
+                  }),
+
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: noteCtrl,
+                    decoration: InputDecoration(
+                      labelText: loc.deleteSurveyNote,
+                      border: const OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    icon: const Icon(Icons.delete_forever, color: Colors.white),
+                    label: Text(loc.confirmAndDelete,
+                        style: const TextStyle(color: Colors.white)),
+                    onPressed: () {
+                      Navigator.pop(ctx, {
+                        'confirm': true,
+                        'reasons': selectedReasons.toList(),
+                        'note': noteCtrl.text,
                       });
                     },
-                  );
-                }),
-
-                const SizedBox(height: 8),
-                TextField(
-                  controller: noteCtrl,
-                  decoration: const InputDecoration(
-                    labelText: "Eklemek istediğiniz bir not?",
-                    border: OutlineInputBorder(),
                   ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
 
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  icon: const Icon(Icons.delete_forever, color: Colors.white),
-                  label: const Text("Onayla ve Hesabı Sil",
-                      style: TextStyle(color: Colors.white)),
-                  onPressed: () {
-                    // Sonucu modal’dan geri döndür
-                    Navigator.pop(ctx, {
-                      'confirm': true,
-                      'reasons': selectedReasons.toList(),
-                      'note': noteCtrl.text,
-                    });
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      );
-    },
-  );
-
-  // Modal sonucu burada işleniyor
-  if (result != null && result['confirm'] == true) {
-    final reasons = List<String>.from(result['reasons'] ?? const []);
-    final note = (result['note'] ?? '') as String;
-
-    // Geçici debug: gerçekten dolu mu?
-    // ignore: avoid_print
-    print('DELETE SURVEY -> reasons=$reasons, note="$note"');
-
-    if (reasons.isEmpty) {
-      // İstersen burada kullanıcıya uyarı da gösterebilirsin:
-      // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen en az bir neden seçin.')));
+    if (result != null && result['confirm'] == true) {
+      final reasons = List<String>.from(result['reasons'] ?? const []);
+      final note = (result['note'] ?? '') as String;
+      await _performDelete(reasons: reasons, note: note);
     }
-
-    await _performDelete(reasons: reasons, note: note);
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final dark = isDarkMode;
 
     return Scaffold(
@@ -263,7 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     child: FlexibleSpaceBar(
-                      title: const Text("Ayarlar"),
+                      title: Text(loc.settingsTitle),
                       background: Align(
                         alignment: Alignment.bottomRight,
                         child: Padding(
@@ -283,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       leading:
                           const Icon(Icons.edit_note, color: Colors.blueAccent),
-                      title: const Text("Profili Düzenle"),
+                      title: Text(loc.editProfile),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         Navigator.push(
@@ -298,24 +284,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Gizlilik
                 SliverToBoxAdapter(
-                  child: _buildSection("🔒 Gizlilik ve Görünürlük", [
+                  child: _buildSection(loc.privacySection, [
                     _buildSwitchTile(
                       icon: Icons.message_outlined,
-                      title: "Herkesten Mesaj Al",
-                      subtitle:
-                          "Kapalı olduğunda yalnızca takip ettiklerinden mesaj alırsın.",
+                      title: loc.messagesFromEveryone,
+                      subtitle: loc.messagesFromEveryoneDesc,
                       value: messageFromEveryone,
                       onChanged: (val) => _updateSetting(
                           'canReceiveMessages',
                           val,
-                          (v) =>
-                              setState(() => messageFromEveryone = v)),
+                          (v) => setState(() => messageFromEveryone = v)),
                     ),
                     _buildSwitchTile(
                       icon: Icons.recommend_outlined,
-                      title: "Hesap Önerileri",
-                      subtitle:
-                          "Profilin önerilerde görünür. İstemiyorsan kapat.",
+                      title: loc.showInSuggestions,
+                      subtitle: loc.showInSuggestionsDesc,
                       value: showInSuggestions,
                       onChanged: (val) => _updateSetting(
                           'showInSuggestions',
@@ -324,9 +307,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     _buildSwitchTile(
                       icon: Icons.person_add_alt_1,
-                      title: "Takip İstekleri (Herkesten)",
-                      subtitle:
-                          "Kapalıysa yalnızca takip ettiklerin sana istek atabilir.",
+                      title: loc.followRequestsFromAll,
+                      subtitle: loc.followRequestsFromAllDesc,
                       value: followRequestsFromAll,
                       onChanged: (val) => _updateSetting(
                           'allowFollowRequests',
@@ -336,8 +318,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     _buildSwitchTile(
                       icon: Icons.lock_outline,
-                      title: "Hesabı Gizliye Al",
-                      subtitle: "Hesabını gizlemek için aç.",
+                      title: loc.makeAccountPrivate,
+                      subtitle: loc.makeAccountPrivateDesc,
                       value: isPrivate,
                       onChanged: (val) => _updateSetting(
                           'isPrivate', val, (v) => setState(() => isPrivate = v)),
@@ -347,11 +329,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Görünüm
                 SliverToBoxAdapter(
-                  child: _buildSection("🎨 Görünüm", [
+                  child: _buildSection(loc.appearanceSection, [
                     _buildSwitchTile(
                       icon: Icons.dark_mode_outlined,
-                      title: "Karanlık Mod",
-                      subtitle: "Uygulama temasını gece moduna al.",
+                      title: loc.darkMode,
+                      subtitle: loc.darkModeDesc,
                       value: isDarkMode,
                       onChanged: _updateDarkMode,
                     ),
@@ -359,32 +341,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // Çıkış Yap
-SliverToBoxAdapter(
-  child: Padding(
-    padding: const EdgeInsets.all(16),
-    child: Card(
-      color: Colors.grey.shade200,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: ListTile(
-        leading: const Icon(Icons.logout, color: Colors.redAccent),
-        title: const Text("Çıkış Yap",
-            style: TextStyle(color: Colors.redAccent)),
-        onTap: () async {
-  await AuthService.signOut();
-  if (!mounted) return;
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-    (route) => false,
-  );
-}
-
-      ),
-    ),
-  ),
-),
-
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Card(
+                      color: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: const Icon(Icons.logout,
+                            color: Colors.redAccent),
+                        title: Text(loc.logout,
+                            style: const TextStyle(color: Colors.redAccent)),
+                        onTap: () async {
+                          await AuthService.signOut();
+                          if (!mounted) return;
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const WelcomeScreen()),
+                            (route) => false,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
 
                 // Danger Zone
                 SliverToBoxAdapter(
@@ -398,9 +381,9 @@ SliverToBoxAdapter(
                       child: ListTile(
                         leading: const Icon(Icons.delete_forever,
                             color: Colors.white),
-                        title: const Text("Hesabı Sil",
-                            style: TextStyle(color: Colors.white)),
-                        onTap: _showDeleteSurvey, // ✅ anket açılıyor
+                        title: Text(loc.deleteAccount,
+                            style: const TextStyle(color: Colors.white)),
+                        onTap: _showDeleteSurvey,
                       ),
                     ),
                   ),

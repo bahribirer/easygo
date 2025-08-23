@@ -9,6 +9,7 @@ import 'package:easygo/core/service/user_profile_service.dart';
 import 'package:easygo/helpers/interests_helper.dart';
 import 'package:easygo/helpers/city_helper.dart';
 import 'package:easygo/features/profile/view/profile_screen.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -26,7 +27,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   bool isSaving = false;
 
   Uint8List? profileImageBytes;
-  List<String> selectedInterests = [];
+List<String> selectedInterests = []; // sadece KEY'ler tutulacak
   String? selectedCity;
   String? isoBirthDate;
 
@@ -92,6 +93,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _selectDate() async {
+    final loc = AppLocalizations.of(context)!;
     final initial =
         (isoBirthDate != null) ? DateTime.tryParse(isoBirthDate!) : null;
 
@@ -100,7 +102,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       initialDate: initial ?? DateTime(2000, 1, 1),
       firstDate: DateTime(1940),
       lastDate: DateTime.now(),
-      helpText: 'Doğum Tarihini Seç',
+      helpText: loc.birthDateHelp,
+      cancelText: loc.cancel,
+      confirmText: loc.ok,
     );
 
     if (picked != null) {
@@ -116,16 +120,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     setState(() => isSaving = true);
 
     final result = await UserProfileService.updateOrCreateProfile(
-      userId: userId!,
-      name: nameController.text.trim().isEmpty
-          ? null
-          : nameController.text.trim(),
-      birthDate: isoBirthDate,
-      location: selectedCity,
-      interests: selectedInterests,
-      profilePhoto:
-          (profileImageBytes != null) ? base64Encode(profileImageBytes!) : null,
-    );
+  userId: userId!,
+  name: nameController.text.trim().isEmpty ? null : nameController.text.trim(),
+  birthDate: isoBirthDate,
+  location: selectedCity,
+  interests: selectedInterests, // 🔹 key listesi gidiyor
+  profilePhoto: (profileImageBytes != null) ? base64Encode(profileImageBytes!) : null,
+);
+
 
     if (!mounted) return;
     setState(() => isSaving = false);
@@ -136,7 +138,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         MaterialPageRoute(builder: (_) => const ProfileScreen()),
       );
     } else {
-      _toast(result['message'] ?? 'Hata oluştu');
+      _toast(result['message'] ?? AppLocalizations.of(context)!.genericError);
     }
   }
 
@@ -148,6 +150,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final bg = Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF0F0F10)
         : const Color(0xFFFFF8F3);
@@ -163,7 +166,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   pinned: true,
                   backgroundColor: Colors.deepOrange,
                   flexibleSpace: FlexibleSpaceBar(
-                    title: const Text("Profili Düzenle"),
+                    title: Text(loc.editProfileTitle),
                     background: Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
@@ -203,11 +206,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         // Ad
                         TextField(
                           controller: nameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             filled: true,
-                            prefixIcon: Icon(Icons.person),
-                            labelText: "Ad / Kullanıcı Adı",
-                            border: OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.person),
+                            labelText: loc.editProfileName,
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -218,11 +221,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           child: AbsorbPointer(
                             child: TextField(
                               controller: birthDateController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 filled: true,
-                                prefixIcon: Icon(Icons.cake_outlined),
-                                labelText: "Doğum Tarihi",
-                                border: OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.cake_outlined),
+                                labelText: loc.editProfileBirthDate,
+                                border: const OutlineInputBorder(),
                               ),
                             ),
                           ),
@@ -232,11 +235,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         // Şehir
                         DropdownButtonFormField<String>(
                           value: selectedCity,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             filled: true,
-                            prefixIcon: Icon(Icons.location_on_outlined),
-                            labelText: "Şehir",
-                            border: OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.location_on_outlined),
+                            labelText: loc.editProfileCity,
+                            border: const OutlineInputBorder(),
                           ),
                           items: turkishCities
                               .map((c) =>
@@ -247,34 +250,43 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         const SizedBox(height: 20),
 
                         // İlgi Alanları
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text("İlgi Alanları",
-                              style: Theme.of(context).textTheme.titleMedium),
-                        ),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: allInterests.map((interest) {
-                            final isSelected =
-                                selectedInterests.contains(interest);
-                            return ChoiceChip(
-                              label: Text(interest),
-                              selected: isSelected,
-                              selectedColor: Colors.deepOrange,
-                              onSelected: (sel) {
-                                setState(() {
-                                  sel
-                                      ? selectedInterests.add(interest)
-                                      : selectedInterests.remove(interest);
-                                });
-                              },
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : null,
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                        // İlgi Alanları
+// İlgi Alanları
+Align(
+  alignment: Alignment.centerLeft,
+  child: Text(
+    loc.editProfileInterests,
+    style: Theme.of(context).textTheme.titleMedium,
+  ),
+),
+Wrap(
+  spacing: 8,
+  runSpacing: 8,
+  children: InterestsHelper.keys.map((key) {
+    final label = InterestsHelper.label(context, key); // 🔹 çeviri
+    final isSelected = selectedInterests.contains(key);
+
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: Colors.deepOrange,
+      onSelected: (sel) {
+        setState(() {
+          if (sel) {
+            selectedInterests.add(key);
+          } else {
+            selectedInterests.remove(key);
+          }
+        });
+      },
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : null,
+      ),
+    );
+  }).toList(),
+),
+
+
                         const SizedBox(height: 30),
 
                         // Kaydet Butonu
@@ -290,7 +302,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                         strokeWidth: 2, color: Colors.white),
                                   )
                                 : const Icon(Icons.save),
-                            label: Text(isSaving ? "Kaydediliyor…" : "Kaydet"),
+                            label: Text(isSaving
+                                ? loc.editProfileSaving
+                                : loc.editProfileSave),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.deepOrange,
                               foregroundColor: Colors.white,

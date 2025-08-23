@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // ✅ eklendi
 
 class DangerZone extends StatelessWidget {
   final bool isDeleting;
@@ -14,6 +15,7 @@ class DangerZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!; // ✅ lokalizasyon erişimi
     final cardColor = dark ? const Color(0xFF111111) : Theme.of(context).cardColor;
     final border = dark ? const Color(0x33FF0000) : Colors.red.withOpacity(.18);
     final textColor = dark ? Colors.white : Colors.black87;
@@ -38,14 +40,18 @@ class DangerZone extends StatelessWidget {
             const Icon(Icons.warning_amber_rounded, color: Colors.red),
             const SizedBox(width: 8),
             Text(
-              'Tehlikeli Bölge',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: dark ? Colors.red.shade300 : Colors.red),
+              loc.dangerZoneTitle, // 🔹 "Tehlikeli Bölge"
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: dark ? Colors.red.shade300 : Colors.red,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          'Hesabını silersen tüm verilerin kalıcı olarak kaldırılır. Bu işlem geri alınamaz.',
+          loc.dangerZoneDescription, // 🔹 açıklama metni
           style: TextStyle(fontSize: 13, color: textColor),
         ),
         const SizedBox(height: 12),
@@ -58,7 +64,7 @@ class DangerZone extends StatelessWidget {
             elevation: 0,
           ),
           icon: const Icon(Icons.delete_forever),
-          label: Text(isDeleting ? 'Siliniyor…' : 'Hesabı Sil'),
+          label: Text(isDeleting ? loc.deleting : loc.deleteAccount), // 🔹 buton metinleri
         ),
       ]),
     );

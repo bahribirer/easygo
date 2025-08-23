@@ -1,5 +1,7 @@
+import 'package:easygo/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -24,28 +26,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   String? _emailValidator(String? v) {
+    final loc = AppLocalizations.of(context)!;
     final value = (v ?? '').trim();
-    if (value.isEmpty) return "E‑posta adresinizi giriniz.";
+    if (value.isEmpty) return loc.errorEmptyEmail;
     final emailRe = RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$");
-    if (!emailRe.hasMatch(value)) return "Geçerli bir e‑posta giriniz.";
+    if (!emailRe.hasMatch(value)) return loc.errorInvalidEmail;
     return null;
   }
 
   Future<void> _handleSend() async {
+    final loc = AppLocalizations.of(context)!;
     setState(() => _touched = true);
 
     final user = FirebaseAuth.instance.currentUser;
     String? emailToSend;
 
-    // Girişliyse mevcut kullanıcı e-postasını kullan
     if (user != null && user.email != null) {
       emailToSend = user.email!;
     } else {
-      // Form doğrulama
       if (!_formKey.currentState!.validate()) {
         _showPopup(
-          title: "Eksik / Hatalı Bilgi",
-          message: "Lütfen e-posta alanını kontrol ederek tekrar deneyin.",
+          title: loc.errorMissingInfoTitle,
+          message: loc.errorMissingInfoMessage,
           type: _PopupType.error,
         );
         return;
@@ -59,9 +61,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: emailToSend);
       _showPopup(
-        title: "Gönderildi",
-        message:
-            "Şifre sıfırlama bağlantısı ${user != null ? user.email : emailToSend} adresinize gönderildi. Gelen kutusu ve spam klasörünü kontrol edin.",
+        title: loc.successSentTitle,
+        message: loc.successSentMessage(emailToSend!),
         type: _PopupType.success,
       );
     } on FirebaseAuthException catch (e) {
@@ -69,27 +70,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       String errorMsg;
       switch (e.code) {
         case 'invalid-email':
-          errorMsg = "Geçersiz e-posta adresi.";
+          errorMsg = loc.errorInvalidEmail;
           break;
         case 'network-request-failed':
-          errorMsg = "Ağ hatası. İnternet bağlantınızı kontrol edin.";
+          errorMsg = loc.errorNetwork;
           break;
         case 'too-many-requests':
-          errorMsg = "Çok fazla deneme yapıldı. Bir süre sonra tekrar deneyin.";
+          errorMsg = loc.errorTooManyRequests;
           break;
         case 'user-disabled':
-          errorMsg = "Bu hesap devre dışı bırakılmış.";
+          errorMsg = loc.errorUserDisabled;
           break;
         default:
-          errorMsg =
-              "İşlem alınamadı. Bir süre sonra tekrar deneyin veya farklı bir e-posta ile deneyin.";
+          errorMsg = loc.errorGeneric;
       }
-      _showPopup(title: "Bilgi", message: errorMsg, type: _PopupType.info);
-    } catch (e) {
-      debugPrint('🔴 Unknown error: $e');
+      _showPopup(title: loc.infoTitle, message: errorMsg, type: _PopupType.info);
+    } catch (_) {
       _showPopup(
-        title: "Bilgi",
-        message: "İşlem alınamadı. Lütfen tekrar deneyiniz.",
+        title: loc.infoTitle,
+        message: loc.errorGeneric2,
         type: _PopupType.info,
       );
     } finally {
@@ -107,6 +106,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _PopupType.error => (Icons.error_rounded, Colors.red),
       _PopupType.info => (Icons.info, Colors.blue),
     };
+
+    final loc = AppLocalizations.of(context)!;
 
     showDialog(
       context: context,
@@ -135,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Tamam",
+              loc.ok,
               style:
                   TextStyle(color: color.shade700, fontWeight: FontWeight.w600),
             ),
@@ -152,6 +153,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final red = Colors.red.shade700;
+    final loc = AppLocalizations.of(context)!;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -163,7 +165,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black87),
             onPressed: () => Navigator.pop(context),
-            tooltip: "Geri",
+            tooltip: loc.back,
           ),
         ),
         body: SafeArea(
@@ -175,7 +177,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Image.asset('assets/easygo_logo.png', height: 56),
                 const SizedBox(height: 16),
                 Text(
-                  "Şifremi Unuttum",
+                  loc.forgotPasswordTitle,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: red,
@@ -185,7 +187,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Mail adresine doğrulama bağlantısı göndereceğiz.",
+                  loc.forgotPasswordSubtitle,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.black54,
                   ),
@@ -222,8 +224,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           onFieldSubmitted: (_) => _handleSend(),
                           validator: _emailValidator,
                           decoration: InputDecoration(
-                            labelText: "Üniversite E‑mail Adresi",
-                            hintText: "ornek@samsun.edu.tr",
+                            labelText: loc.universityEmailLabel,
+                            hintText: loc.universityEmailHint,
                             prefixIcon:
                                 const Icon(Icons.alternate_email_rounded),
                             filled: true,
@@ -244,7 +246,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                "Gelen kutunuzu ve spam klasörünü kontrol edin. Kurumsal adreslerde karantinaya düşebilir.",
+                                loc.forgotPasswordNote,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: Colors.grey[600],
                                 ),
@@ -273,9 +275,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     child:
                                         CircularProgressIndicator(strokeWidth: 2),
                                   )
-                                : const Text(
-                                    "Doğrulama Bağlantısı Gönder",
-                                    style: TextStyle(
+                                : Text(
+                                    loc.sendVerificationButton,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: .2,
                                     ),
@@ -290,14 +292,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 TextButton.icon(
                   onPressed: () {
                     _showPopup(
-                      title: "Yardım",
-                      message:
-                          "E‑posta gelmediyse spam klasörünü kontrol edin veya birkaç dakika sonra tekrar deneyin.",
+                      title: loc.help,
+                      message: loc.helpMessage,
                       type: _PopupType.info,
                     );
                   },
                   icon: const Icon(Icons.help_outline),
-                  label: const Text("E‑posta gelmedi mi?"),
+                  label: Text(loc.emailNotReceived),
                 ),
               ],
             ),

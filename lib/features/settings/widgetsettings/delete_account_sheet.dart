@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // ✅ eklendi
 
 class DeleteAccountSheet extends StatefulWidget {
   final bool dark;
@@ -9,17 +11,24 @@ class DeleteAccountSheet extends StatefulWidget {
 }
 
 class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
-  final reasons = <String>[
-    'Uygulamayı artık kullanmıyorum',
-    'Gizlilik/Veri endişeleri',
-    'Bildirimler rahatsız etti',
-    'Teknik sorunlar yaşadım',
-    'Başka bir uygulamaya geçtim',
-    'Diğer',
-  ];
+  late final List<String> reasons;
   final selected = <String>{};
   final noteCtrl = TextEditingController();
   bool confirm = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final loc = AppLocalizations.of(context)!;
+    reasons = [
+      loc.reasonNotUsing,
+      loc.reasonPrivacy,
+      loc.reasonNotifications,
+      loc.reasonTechnical,
+      loc.reasonOtherApp,
+      loc.reasonOther,
+    ];
+  }
 
   @override
   void dispose() {
@@ -29,6 +38,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final mq = MediaQuery.of(context);
     final bool dark = widget.dark;
 
@@ -69,17 +79,17 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                         ),
                       ),
 
-                      Text('Hesabı Silmeden Önce',
+                      Text(loc.deleteSheetTitle,
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: text)),
                       const SizedBox(height: 8),
-                      _dangerBullet('Bu işlem kalıcıdır ve geri alınamaz.', text),
-                      _dangerBullet('Profil ve ayarlar dahil tüm verilerin silinir.', text),
+                      _dangerBullet(loc.deleteWarning1, text),
+                      _dangerBullet(loc.deleteWarning2, text),
                       const SizedBox(height: 12),
 
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Neden silmek istiyorsun? (opsiyonel)',
+                          loc.deleteReasonOptional,
                           style: TextStyle(fontWeight: FontWeight.w700, color: text),
                         ),
                       ),
@@ -108,8 +118,8 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                         maxLines: 3,
                         style: TextStyle(color: text),
                         decoration: InputDecoration(
-                          labelText: 'Eklemek istediğin bir not var mı?',
-                          hintText: 'Kısaca yazabilirsin…',
+                          labelText: loc.deleteNoteLabel,
+                          hintText: loc.deleteNoteHint,
                           labelStyle: TextStyle(color: text.withOpacity(.8)),
                           hintStyle: TextStyle(color: text.withOpacity(.6)),
                           border: OutlineInputBorder(borderSide: BorderSide(color: border)),
@@ -126,7 +136,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                         value: confirm,
                         onChanged: (v) => setState(() => confirm = v ?? false),
                         title: Text(
-                          'Eminim. Hesabımı kalıcı olarak silmek istiyorum.',
+                          loc.deleteConfirmText,
                           style: TextStyle(fontWeight: FontWeight.w600, color: text),
                         ),
                         controlAffinity: ListTileControlAffinity.leading,
@@ -145,7 +155,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 foregroundColor: dark ? Colors.white70 : const Color(0xFFFB8C00),
                               ),
-                              child: const Text('Vazgeç'),
+                              child: Text(loc.cancel),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -165,7 +175,7 @@ class _DeleteAccountSheetState extends State<DeleteAccountSheet> {
                                 elevation: 0,
                               ),
                               icon: const Icon(Icons.delete_forever),
-                              label: const Text('Hesabı Sil'),
+                              label: Text(loc.deleteAccount),
                             ),
                           ),
                         ],

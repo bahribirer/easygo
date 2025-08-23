@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // ✅ eklendi
 
 class FancyHeader extends StatelessWidget {
   final String title;
@@ -16,7 +17,9 @@ class FancyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!; // ✅ lokalizasyon erişimi
     final coverH = (MediaQuery.of(context).size.height * 0.22).clamp(160.0, 220.0);
+
     return SliverAppBar(
       automaticallyImplyLeading: false,
       pinned: true,
@@ -54,13 +57,13 @@ class FancyHeader extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: onBack,
-                        tooltip: 'Geri',
+                        tooltip: loc.back, // 🔹 lokalize edildi
                       ),
                       const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.logout, color: Colors.white),
                         onPressed: onLogout,
-                        tooltip: 'Çıkış Yap',
+                        tooltip: loc.logout, // 🔹 lokalize edildi
                       ),
                     ],
                   ),

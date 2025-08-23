@@ -31,6 +31,10 @@ dependencies:
   lottie: ^2.7.0
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+  
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -45,6 +49,8 @@ dependencies:
   firebase_messaging: ^16.0.0
   flutter_local_notifications: ^19.4.0
   cloud_firestore: ^6.0.0
+  flutter_gen: ^5.10.0
+  country_icons: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +73,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  generate: true   # <-- gen_l10n otomatik çalışsın
+
 
   assets:
     - assets/easygo_logo.png

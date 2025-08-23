@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:easygo/widgets/ui/glass_card.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // 🔹 eklendi
 
 class FriendsPreviewCard extends StatelessWidget {
   final List<dynamic> friends;
@@ -23,6 +24,7 @@ class FriendsPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!; // 🔹 eklendi
     final w = MediaQuery.of(context).size.width;
     final maxPreview = ((w - 32) / 28).floor().clamp(0, 8);
     final preview = friends.take(maxPreview).toList();
@@ -33,20 +35,22 @@ class FriendsPreviewCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('Arkadaşlar',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              Text(
+                loc.friendsTitle,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
               const Spacer(),
               if (friends.isNotEmpty)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text('${friends.length} kişi',
-                      style: const TextStyle(
-                          fontSize: 12, color: Colors.black87)),
+                  child: Text(
+                    loc.friendsCount(friends.length), // 🔹 çevrildi
+                    style: const TextStyle(fontSize: 12, color: Colors.black87),
+                  ),
                 ),
             ],
           ),
@@ -55,21 +59,23 @@ class FriendsPreviewCard extends StatelessWidget {
             Column(
               children: [
                 const SizedBox(height: 6),
-                const Icon(Icons.people_outline,
-                    size: 44, color: Colors.black38),
+                const Icon(Icons.people_outline, size: 44, color: Colors.black38),
                 const SizedBox(height: 8),
-                const Text('Henüz arkadaşın yok gibi görünüyor.',
-                    style: TextStyle(color: Colors.black54)),
+                Text(
+                  loc.friendsEmpty, // 🔹 çevrildi
+                  style: const TextStyle(color: Colors.black54),
+                ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
                   onPressed: onTapAll,
                   icon: const Icon(Icons.person_add_alt_1),
-                  label: const Text('Arkadaş Bul'),
+                  label: Text(loc.friendsFind), // 🔹 çevrildi
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEA5455),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
@@ -101,7 +107,7 @@ class FriendsPreviewCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onTapAll,
                     icon: const Icon(Icons.list_alt),
-                    label: const Text('Tüm arkadaşları gör'),
+                    label: Text(loc.friendsSeeAll), // 🔹 çevrildi
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFEA5455),
                       side: const BorderSide(color: Color(0xFFFF7A7A)),

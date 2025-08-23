@@ -8,6 +8,7 @@ import 'package:easygo/features/home/view/home_screen.dart';
 import 'package:easygo/widgets/ui/glass_card.dart';
 import 'package:easygo/widgets/ui/blur_blob.dart';
 import 'package:easygo/widgets/ui/back_to_main_button.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // 🔹 eklendi
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -95,8 +96,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 13),
                             ),
-                            child: const Text('Tamam',
-                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                            child: Text(
+                              AppLocalizations.of(context)!.ok, // 🔹 çevrildi
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                            ),
                           ),
                         ),
                       ],
@@ -115,14 +118,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   Future<void> _showInfoDialog(String msg) => _showAnimatedDialog(
-        title: 'Eksik Bilgi',
+        title: AppLocalizations.of(context)!.loginInfoTitle, // 🔹 çevrildi
         message: msg,
         icon: Icons.info_outline,
         color: Colors.orange.shade700,
       );
 
   Future<void> _showErrorDialog(String msg) => _showAnimatedDialog(
-        title: 'Giriş Başarısız',
+        title: AppLocalizations.of(context)!.loginErrorTitle, // 🔹 çevrildi
         message: msg,
         icon: Icons.error_outline,
         color: Colors.red.shade700,
@@ -130,74 +133,71 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   // ----------------- LOGIN -----------------
   Future<void> _handleLogin() async {
-  FocusScope.of(context).unfocus();
+    final loc = AppLocalizations.of(context)!; // 🔹 kolay erişim
+    FocusScope.of(context).unfocus();
 
-  if (!_formKey.currentState!.validate()) {
-    await _showInfoDialog('Lütfen e‑posta ve şifre alanlarını düzgün doldurun.');
-    return;
-  }
+    if (!_formKey.currentState!.validate()) {
+      await _showInfoDialog(loc.loginInfoMessage); // 🔹 çevrildi
+      return;
+    }
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    // 1) Firebase ile giriş
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: emailController.text.trim().toLowerCase(),
-      password: passwordController.text,
-    );
-
-    // 2) Mevcut Firebase oturumundan idToken alıp backend’ten JWT çek
-    final res = await AuthService.loginUsingCurrentFirebaseUser();
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    if (res['success'] == true) {
-      // ✅ Başarılı → Home'a geç
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 400),
-          pageBuilder: (_, __, ___) => const HomeScreen(),
-          transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
-        ),
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim().toLowerCase(),
+        password: passwordController.text,
       );
-    } else {
-      await _showErrorDialog(res['message'] ?? 'Giriş başarısız.');
-    }
-  } on FirebaseAuthException catch (e) {
-    if (!mounted) return;
-    setState(() => _isLoading = false);
 
-    String msg;
-    switch (e.code) {
-      case 'invalid-credential':
-      case 'wrong-password':
-        msg = 'E‑posta veya şifre hatalı.';
-        break;
-      case 'user-not-found':
-        msg = 'Bu e‑posta ile kullanıcı bulunamadı.';
-        break;
-      case 'too-many-requests':
-        msg = 'Çok fazla deneme. Biraz sonra tekrar deneyin.';
-        break;
-      case 'network-request-failed':
-        msg = 'Ağ hatası. Bağlantınızı kontrol edin.';
-        break;
-      case 'invalid-email':
-        msg = 'Geçersiz e‑posta adresi.';
-        break;
-      default:
-        msg = 'Giriş yapılamadı: ${e.code}';
+      final res = await AuthService.loginUsingCurrentFirebaseUser();
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (res['success'] == true) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 400),
+            pageBuilder: (_, __, ___) => const HomeScreen(),
+            transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+          ),
+        );
+      } else {
+        await _showErrorDialog(res['message'] ?? loc.loginErrorTitle); // 🔹 çevrildi
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      String msg;
+      switch (e.code) {
+        case 'invalid-credential':
+        case 'wrong-password':
+          msg = loc.loginErrorWrongCredentials; // 🔹 çevrildi
+          break;
+        case 'user-not-found':
+          msg = loc.loginErrorNotFound; // 🔹 çevrildi
+          break;
+        case 'too-many-requests':
+          msg = loc.loginErrorTooMany; // 🔹 çevrildi
+          break;
+        case 'network-request-failed':
+          msg = loc.loginErrorNetwork; // 🔹 çevrildi
+          break;
+        case 'invalid-email':
+          msg = loc.loginErrorInvalidEmail; // 🔹 çevrildi
+          break;
+        default:
+msg = loc.loginErrorUnexpected(e.code);
+      }
+      await _showErrorDialog(msg);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
     }
-    await _showErrorDialog(msg);
-  } catch (e) {
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    await _showErrorDialog('Beklenmeyen hata: $e');
   }
-}
-
 
   // ----------------- UI -----------------
   @override
@@ -208,6 +208,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
     final baseGrad = const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
     final accent = const Color(0xFFEA5455);
+
+    final loc = AppLocalizations.of(context)!; // 🔹 kolay erişim
 
     return Scaffold(
       backgroundColor: baseGrad.first,
@@ -275,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: 'Devam Etmek İçin\n',
+                                text: '${loc.loginTitleLine1}\n', // 🔹 çevrildi
                                 style: TextStyle(
                                   fontSize: 22,
                                   color: Colors.red.shade700,
@@ -283,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 ),
                               ),
                               TextSpan(
-                                text: 'Giriş Yapınız.',
+                                text: loc.loginTitleLine2, // 🔹 çevrildi
                                 style: TextStyle(
                                   fontSize: 20,
                                   color: Colors.blue.shade700,
@@ -310,15 +312,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.email],
                               decoration: _inputDecoration(
-                                label: 'E-posta adresi',
-                                hint: 'universite@ornek.edu.tr',
+                                label: loc.emailLabel, // 🔹 çevrildi
+                                hint: loc.emailHint, // 🔹 çevrildi
                                 icon: Icons.alternate_email_rounded,
                               ),
                               validator: (val) {
                                 final t = (val ?? '').trim();
-                                if (t.isEmpty) return 'E-posta gerekli';
+                                if (t.isEmpty) return loc.emailRequired; // 🔹 çevrildi
                                 final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(t);
-                                if (!ok) return 'Geçerli bir e-posta girin';
+                                if (!ok) return loc.emailInvalid; // 🔹 çevrildi
                                 return null;
                               },
                             ),
@@ -329,8 +331,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _handleLogin(),
                               decoration: _inputDecoration(
-                                label: 'Şifre',
-                                hint: '••••••••',
+                                label: loc.passwordLabel, // 🔹 çevrildi
+                                hint: loc.passwordHint, // 🔹 çevrildi
                                 icon: Icons.lock_outline_rounded,
                                 suffix: IconButton(
                                   onPressed: () => setState(() => _obscure = !_obscure),
@@ -340,8 +342,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 ),
                               ),
                               validator: (val) {
-                                if ((val ?? '').isEmpty) return 'Şifre gerekli';
-                                if ((val ?? '').length < 6) return 'En az 6 karakter';
+                                if ((val ?? '').isEmpty) return loc.passwordRequired; // 🔹 çevrildi
+                                if ((val ?? '').length < 6) return loc.passwordMinLength; // 🔹 çevrildi
                                 return null;
                               },
                             ),
@@ -355,7 +357,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
                                   );
                                 },
-                                child: const Text('Şifremi Unuttum'),
+                                child: Text(loc.forgotPassword), // 🔹 çevrildi
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -375,8 +377,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         height: 22, width: 22,
                                         child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
                                       )
-                                    : const Text('Giriş Yap',
-                                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                                    : Text(
+                                        loc.loginButton, // 🔹 çevrildi
+                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                      ),
                               ),
                             ),
                           ],

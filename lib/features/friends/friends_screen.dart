@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easygo/features/friends/friend_profile_screen.dart';
-import 'package:easygo/core/service/friendService.dart'; // <- yolunu projene göre ayarla
+import 'package:easygo/core/service/friendService.dart';
 import 'package:easygo/features/friends/widgets/section_card.dart';
 import 'package:easygo/features/friends/widgets/stat_card.dart';
 import 'package:easygo/features/friends/widgets/status_chip.dart';
 import 'package:easygo/features/friends/widgets/search_users_sheet.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -22,11 +23,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
   String? userId;
   bool isLoading = true;
 
-  // Eylem butonları için busy state
   final Set<String> _acceptBusy = {};
   final Set<String> _rejectBusy = {};
-
-  // Aynı oturumda tekrar arama sheet’inde gönderilen istekleri işaretlemek için
   final Set<String> _locallySent = {};
 
   @override
@@ -57,41 +55,45 @@ class _FriendsScreenState extends State<FriendsScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      _showResultDialog("Hata", "Veriler alınırken bir sorun oluştu. Lütfen tekrar deneyin.");
+      final loc = AppLocalizations.of(context)!;
+      _showResultDialog(loc.errorTitle, loc.friendsFetchError);
     }
   }
 
   Future<void> handleAccept(String fromUserId) async {
+    final loc = AppLocalizations.of(context)!;
     if (userId == null) return;
     setState(() => _acceptBusy.add(fromUserId));
     try {
       await FriendService.acceptRequest(userId!, fromUserId);
       await fetchData();
       if (!mounted) return;
-      _showResultDialog("Arkadaş Oldunuz", "İstek kabul edildi.");
+      _showResultDialog(loc.friendAcceptedTitle, loc.friendAcceptedMessage);
     } catch (_) {
-      _showResultDialog("Hata", "İstek kabul edilemedi.");
+      _showResultDialog(loc.errorTitle, loc.friendAcceptError);
     } finally {
       if (mounted) setState(() => _acceptBusy.remove(fromUserId));
     }
   }
 
   Future<void> handleReject(String fromUserId) async {
+    final loc = AppLocalizations.of(context)!;
     if (userId == null) return;
     setState(() => _rejectBusy.add(fromUserId));
     try {
       await FriendService.rejectRequest(userId!, fromUserId);
       await fetchData();
       if (!mounted) return;
-      _showResultDialog("Reddedildi", "İstek reddedildi.");
+      _showResultDialog(loc.friendRejectedTitle, loc.friendRejectedMessage);
     } catch (_) {
-      _showResultDialog("Hata", "İstek reddedilemedi.");
+      _showResultDialog(loc.errorTitle, loc.friendRejectError);
     } finally {
       if (mounted) setState(() => _rejectBusy.remove(fromUserId));
     }
   }
 
   Future<void> _showResultDialog(String title, String message) async {
+    final loc = AppLocalizations.of(context)!;
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -99,7 +101,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Tamam")),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(loc.ok)),
         ],
       ),
     );
@@ -126,11 +128,12 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   // ---- Özet kartları ----
   Widget _summaryCards() {
+    final loc = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
           child: StatCard(
-            title: "Arkadaş",
+            title: loc.friendsSummary,
             value: friends.length.toString(),
             icon: Icons.people_alt_rounded,
             gradient: const [Color(0xFFFF9A9E), Color(0xFFFAD0C4)],
@@ -139,7 +142,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: StatCard(
-            title: "İstek",
+            title: loc.requestsSummary,
             value: friendRequests.length.toString(),
             icon: Icons.person_add_alt_1,
             gradient: const [Color(0xFFA18CD1), Color(0xFFFBC2EB)],
@@ -151,16 +154,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   // ---- İstek listesi bölümü ----
   Widget _buildRequestSection() {
+    final loc = AppLocalizations.of(context)!;
     if (friendRequests.isEmpty) {
       return SectionCard(
-        title: "Arkadaşlık İstekleri",
+        title: loc.friendRequestsTitle,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
-            children: const [
-              Icon(Icons.mark_email_unread_outlined, size: 40, color: Colors.black38),
-              SizedBox(height: 8),
-              Text("Şu an bekleyen isteğin yok.", style: TextStyle(color: Colors.black54)),
+            children: [
+              const Icon(Icons.mark_email_unread_outlined, size: 40, color: Colors.black38),
+              const SizedBox(height: 8),
+              Text(loc.noFriendRequests, style: const TextStyle(color: Colors.black54)),
             ],
           ),
         ),
@@ -168,8 +172,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
     }
 
     return SectionCard(
-      title: "Arkadaşlık İstekleri",
-      trailing: StatusChip("${friendRequests.length} beklemede", bg: Colors.orange.shade100),
+      title: loc.friendRequestsTitle,
+      trailing: StatusChip(loc.pendingRequests(friendRequests.length), bg: Colors.orange.shade100),
       child: SizedBox(
         height: 170,
         child: ListView.separated(
@@ -256,7 +260,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                           width: 16,
                                           height: 16,
                                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                      : const Text("Kabul"),
+                                      : Text(loc.accept),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -275,7 +279,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                           width: 16,
                                           height: 16,
                                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                      : const Text("Reddet"),
+                                      : Text(loc.reject),
                                 ),
                               ),
                             ],
@@ -296,22 +300,22 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   // ---- Arkadaş grid’i ----
   Widget _buildFriendGrid() {
+    final loc = AppLocalizations.of(context)!;
     if (friends.isEmpty) {
       return SectionCard(
-        title: "Arkadaşlar",
+        title: loc.friendsSection,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 28),
           child: Column(
             children: [
               const Icon(Icons.people_outline, size: 44, color: Colors.black38),
               const SizedBox(height: 8),
-              const Text("Henüz arkadaşın yok gibi görünüyor.",
-                  style: TextStyle(color: Colors.black54)),
+              Text(loc.noFriends, style: const TextStyle(color: Colors.black54)),
               const SizedBox(height: 8),
               ElevatedButton.icon(
                 onPressed: _openSearchSheet,
                 icon: const Icon(Icons.person_add_alt_1),
-                label: const Text("Arkadaş Bul"),
+                label: Text(loc.findFriends),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
@@ -325,7 +329,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     }
 
     return SectionCard(
-      title: "Arkadaşlar",
+      title: loc.friendsSection,
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -411,9 +415,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  // ---- Scaffold ----
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFFFF0E9),
       appBar: AppBar(
@@ -426,10 +430,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text('Arkadaşlar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            SizedBox(height: 2),
-            Text('Bağlantılarını yönet', style: TextStyle(color: Colors.black54, fontSize: 12)),
+          children: [
+            Text(loc.friendsTitle, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            Text(loc.manageConnections, style: const TextStyle(color: Colors.black54, fontSize: 12)),
           ],
         ),
       ),
@@ -460,7 +464,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.person_add_alt_1),
-        label: const Text("Arkadaş Ekle"),
+        label: Text(loc.addFriendButton),
       ),
     );
   }

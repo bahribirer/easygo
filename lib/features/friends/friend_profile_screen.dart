@@ -1,17 +1,18 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// Servis yollarını projendeki klasör adına göre ayarla:
-// 1) Eğer "core/service" kullanıyorsan alttakileri olduğu gibi bırak.
-// 2) Eğer "core/services" ise "service" -> "services" yap.
+// servisler
 import 'package:easygo/core/service/user_profile_service.dart';
 import 'package:easygo/core/service/friendService.dart';
+import 'package:easygo/core/service/profile_view_service.dart';
 
 import 'package:easygo/features/friends/widgets/section_card.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class FriendProfileScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Map<String, dynamic> user; // { _id, name, ... }
 
   const FriendProfileScreen({super.key, required this.user});
 
@@ -23,11 +24,31 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
   Map<String, dynamic>? profileData;
   bool isLoading = true;
   String? currentUserId;
+  bool _viewRecorded = false; // aynı ekranda tekrar tekrar kaydetme engeli
 
   @override
   void initState() {
     super.initState();
     _fetchFriendProfile();
+    _recordProfileView(); // 🔴 profil açılınca kaydı at
+  }
+
+  Future<void> _recordProfileView() async {
+    if (_viewRecorded) return;
+    final current = FirebaseAuth.instance.currentUser;
+    if (current == null) return;
+
+    try {
+      await ProfileViewService.recordProfileView(
+        viewedUserId: widget.user['_id'], // profili açılan kişi
+        viewerUid: current.uid, // ben kimim
+        viewerName: current.displayName ?? 'User',
+        viewerPhotoUrl: current.photoURL,
+      );
+      _viewRecorded = true;
+    } catch (e) {
+      debugPrint("ProfileView kaydedilemedi: $e");
+    }
   }
 
   Future<void> _fetchFriendProfile() async {
@@ -46,12 +67,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
         });
       } else {
         setState(() => isLoading = false);
-        _toast('Profil verisi alınamadı.');
+        _toast(AppLocalizations.of(context)!.profileLoadFailed);
       }
     } catch (_) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      _toast('Bir hata oluştu. Lütfen tekrar deneyin.');
+      _toast(AppLocalizations.of(context)!.genericError);
     }
   }
 
@@ -73,25 +94,26 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
   }
 
   Future<void> _confirmUnfriend() async {
+    final loc = AppLocalizations.of(context)!;
     if (currentUserId == null) return;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Arkadaşlıktan çıkar?'),
+        title: Text(loc.unfriendConfirmTitle),
         content: Text(
-          '"${profileData?['name'] ?? 'Kullanıcı'}" kişi listesinden kaldırılacak.',
+          loc.unfriendConfirmMessage(profileData?['name'] ?? loc.userDefault),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç'),
+            child: Text(loc.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Evet, çıkar'),
+            child: Text(loc.unfriendConfirmYes),
           ),
         ],
       ),
@@ -107,13 +129,13 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
         context: context,
         builder: (_) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Arkadaşlık Silindi 💔',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          content: const Text('Bu kişiyi arkadaş listesinden kaldırdın.'),
+          title: Text(loc.unfriendSuccessTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(loc.unfriendSuccessMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Tamam', style: TextStyle(color: Colors.red)),
+              child: Text(loc.ok, style: const TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -121,7 +143,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
 
       Navigator.pop(context, true); // listeye dön ve refresh tetikle
     } catch (_) {
-      _toast('İşlem başarısız. Lütfen tekrar deneyin.');
+      _toast(loc.genericError);
     }
   }
 
@@ -131,6 +153,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final bg = const Color(0xFFFFF0E9);
 
     return Scaffold(
@@ -143,17 +166,17 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : (profileData == null)
-              ? const Center(child: Text('Profil verisi alınamadı'))
+              ? Center(child: Text(loc.profileLoadFailed))
               : Column(
                   children: [
                     Expanded(
                       child: SingleChildScrollView(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // --- Header / Avatar & Kimlik ---
+                            // Avatar
                             Hero(
                               tag: "friend_${widget.user['_id']}",
                               child: CircleAvatar(
@@ -168,7 +191,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              "${profileData!['name'] ?? 'Kullanıcı'}, ${_calculateAge(profileData!['birthDate'])}",
+                              "${profileData!['name'] ?? loc.userDefault}, ${_calculateAge(profileData!['birthDate'])}",
                               style: const TextStyle(
                                   fontSize: 24, fontWeight: FontWeight.bold),
                             ),
@@ -186,7 +209,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                                     size: 16, color: Colors.red),
                                 const SizedBox(width: 4),
                                 Text(
-                                  "${profileData!['location'] ?? 'Bilinmiyor'}, TÜRKİYE",
+                                  "${profileData!['location'] ?? loc.unknown}, TÜRKİYE",
                                   style: const TextStyle(
                                       color: Colors.black54, fontSize: 14),
                                 ),
@@ -194,14 +217,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                             ),
                             const SizedBox(height: 24),
 
-                            // --- Arkadaş sayısı ---
+                            // Arkadaş sayısı
                             SectionCard(
-                              title: 'Arkadaşlar',
+                              title: loc.friendsSection,
                               child: Padding(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 8.0),
                                 child: Text(
-                                  "${(profileData!['friends'] as List?)?.length ?? 0} arkadaş",
+                                  loc.friendCountLabel(
+                                      (profileData!['friends'] as List?)?.length ?? 0),
                                   style: const TextStyle(
                                       color: Colors.black87,
                                       fontWeight: FontWeight.w600),
@@ -210,9 +234,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // --- İlgi alanları ---
+                            // İlgi alanları
                             SectionCard(
-                              title: 'İlgi Alanları',
+                              title: loc.interestsSection,
                               child: (profileData!['interests'] != null &&
                                       (profileData!['interests'] as List).isNotEmpty)
                                   ? Wrap(
@@ -229,15 +253,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                                           .toList()
                                           .cast<Widget>(),
                                     )
-                                  : const Text('İlgi alanı belirtilmemiş',
-                                      style: TextStyle(color: Colors.black54)),
+                                  : Text(loc.noInterests,
+                                      style: const TextStyle(color: Colors.black54)),
                             ),
                           ],
                         ),
                       ),
                     ),
 
-                    // --- Alt aksiyon bar ---
+                    // alt aksiyon bar
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 16),
@@ -263,7 +287,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                                 ),
                               ),
                               onPressed: _confirmUnfriend,
-                              label: const Text('Arkadaşlıktan Çıkar'),
+                              label: Text(loc.unfriendButton),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -279,9 +303,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                               onPressed: () {
                                 // TODO: Mesajlaşma akışı bağlanacak
                               },
-                              label: const Text(
-                                'Mesaj Gönder',
-                                style: TextStyle(color: Colors.black54),
+                              label: Text(
+                                loc.sendMessage,
+                                style: const TextStyle(color: Colors.black54),
                               ),
                             ),
                           ),

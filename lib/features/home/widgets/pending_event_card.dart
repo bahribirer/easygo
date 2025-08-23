@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easygo/features/home/models/pending_event.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class PendingEventCard extends StatelessWidget {
   final PendingEvent pending;
@@ -11,7 +12,9 @@ class PendingEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dt = pending.dateTime;
-    final dateStr = '${_pad(dt.day)}.${_pad(dt.month)}.${dt.year}  •  ${_pad(dt.hour)}:${_pad(dt.minute)}';
+    final loc = AppLocalizations.of(context)!;
+    final dateStr =
+        '${_pad(dt.day)}.${_pad(dt.month)}.${dt.year}  •  ${_pad(dt.hour)}:${_pad(dt.minute)}';
 
     return Container(
       decoration: BoxDecoration(
@@ -34,21 +37,34 @@ class PendingEventCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Beklemede', style: TextStyle(fontWeight: FontWeight.w900)),
-              const SizedBox(height: 2),
-              Text('${pending.type} • ${pending.city}', style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(dateStr, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  loc.pendingStatus,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${pending.type} • ${pending.city}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  dateStr,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
           ),
           TextButton.icon(
             onPressed: onCancel,
             icon: const Icon(Icons.close_rounded, size: 18),
-            label: const Text('İptal'),
+            label: Text(loc.cancel),
             style: TextButton.styleFrom(
               foregroundColor: Colors.red.shade700,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             ),
           )
         ],

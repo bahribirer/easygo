@@ -4,6 +4,7 @@ import 'package:easygo/features/profile/steps/profile_step4.dart';
 import 'package:easygo/features/profile/steps/profile_step_common.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class ProfileStep3Screen extends StatefulWidget {
   const ProfileStep3Screen({super.key});
@@ -21,14 +22,16 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final initial = DateTime(2000, 1, 1);
+    final loc = AppLocalizations.of(context)!;
+
     final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? initial,
       firstDate: DateTime(1900),
       lastDate: now,
-      helpText: 'Doğum Tarihini Seç',
-      cancelText: 'İptal',
-      confirmText: 'Tamam',
+      helpText: loc.birthDateSelect,   // "Doğum Tarihini Seç"
+      cancelText: loc.cancel,          // "İptal"
+      confirmText: loc.ok,             // "Tamam"
     );
     if (picked != null) {
       setState(() => selectedDate = picked);
@@ -50,8 +53,9 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
       final userId = prefs.getString('userId');
       if (userId == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Kullanıcı ID bulunamadı')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorMissingInfoMessage)),
+        );
         return;
       }
 
@@ -69,7 +73,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['message'] ?? 'Hata oluştu')),
+          SnackBar(content: Text(res['message'] ?? AppLocalizations.of(context)!.genericError)),
         );
       }
     } finally {
@@ -79,6 +83,7 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final padBottom = MediaQuery.of(context).viewInsets.bottom;
     final isFormValid = selectedCity != null && selectedDate != null;
 
@@ -100,11 +105,17 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const StepHeader(progress: 0.75),
+                          StepHeader(
+                            progress: 0.75,
+                            trailing: Text(
+                              loc.stepCount(3, 4), // "Adım 3 / 4"
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
                           const SizedBox(height: 20),
 
                           Text(
-                            'Konum ve Doğum Tarihi',
+                            loc.step3Title, // "Konum ve Doğum Tarihi"
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
@@ -113,20 +124,20 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Seni daha iyi tanımamıza yardım et. Konumun keşfet içeriklerinde, yaşın ise önerilerde daha iyi eşleşmeler için kullanılır.',
+                            loc.step3Subtitle, // "Seni daha iyi tanımamıza yardım et..."
                             style: TextStyle(color: Colors.grey.shade600),
                           ),
                           const SizedBox(height: 20),
 
                           StepTitledCard(
-                            title: 'Konum',
+                            title: loc.locationTitle, // "Konum"
                             child: DropdownButtonFormField<String>(
                               value: selectedCity,
                               isExpanded: true,
-                              decoration: const InputDecoration(
-                                prefixIcon: Icon(Icons.location_on_outlined),
-                                labelText: 'İl Seçiniz',
-                                border: OutlineInputBorder(),
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.location_on_outlined),
+                                labelText: loc.locationSelect, // "İl Seçiniz"
+                                border: const OutlineInputBorder(),
                               ),
                               items: cities
                                   .map((c) => DropdownMenuItem(
@@ -139,16 +150,16 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                           ),
 
                           StepTitledCard(
-                            title: 'Doğum Tarihi',
+                            title: loc.birthDateTitle, // "Doğum Tarihi"
                             child: GestureDetector(
                               onTap: _pickDate,
                               child: AbsorbPointer(
                                 child: TextFormField(
-                                  decoration: const InputDecoration(
-                                    prefixIcon: Icon(Icons.cake_outlined),
-                                    labelText: 'Doğum Tarihi',
-                                    hintText: 'GG.AA.YYYY',
-                                    border: OutlineInputBorder(),
+                                  decoration: InputDecoration(
+                                    prefixIcon: const Icon(Icons.cake_outlined),
+                                    labelText: loc.birthDateTitle,
+                                    hintText: loc.birthDateHint, // "GG.AA.YYYY"
+                                    border: const OutlineInputBorder(),
                                   ),
                                   controller: TextEditingController(
                                     text: selectedDate == null ? '' : _fmtDate(selectedDate!),
@@ -161,13 +172,13 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                           const SizedBox(height: 16),
                           if (!isFormValid)
                             Row(
-                              children: const [
-                                Icon(Icons.info_outline, size: 18, color: Colors.orange),
-                                SizedBox(width: 6),
+                              children: [
+                                const Icon(Icons.info_outline, size: 18, color: Colors.orange),
+                                const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    'Devam etmek için şehir ve doğum tarihi seçmelisin.',
-                                    style: TextStyle(color: Colors.orange, fontSize: 12.5),
+                                    loc.formErrorCityAndDate,
+                                    style: const TextStyle(color: Colors.orange, fontSize: 12.5),
                                   ),
                                 ),
                               ],
@@ -187,9 +198,9 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                   ),
-                                  child: const Text(
-                                    'Geri',
-                                    style: TextStyle(
+                                  child: Text(
+                                    loc.backButton,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       color: Colors.orange,
                                     ),
@@ -219,7 +230,9 @@ class _ProfileStep3ScreenState extends State<ProfileStep3Screen> {
                                           ),
                                         )
                                       : const Icon(Icons.arrow_forward_rounded),
-                                  label: Text(_saving ? 'Kaydediliyor…' : 'Devam Et'),
+                                  label: Text(
+                                    _saving ? loc.saving : loc.continueButton,
+                                  ),
                                 ),
                               ),
                             ],

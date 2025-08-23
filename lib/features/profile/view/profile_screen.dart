@@ -1,18 +1,18 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:easygo/helpers/interests_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:easygo/core/service/user_profile_service.dart';
 import 'package:easygo/features/friends/list/friends_list_screen.dart';
 import 'package:easygo/widgets/ui/glass_card.dart';
-
-import 'package:easygo/features/profile/widgetprofile/profile_header.dart';
-import 'package:easygo/features/profile/widgetprofile/stat_card.dart';
 import 'package:easygo/features/profile/widgetprofile/about_row.dart';
 import 'package:easygo/features/profile/widgetprofile/friends_preview_card.dart';
 import 'package:easygo/features/profile/widgetprofile/interests_card.dart';
+import 'package:easygo/features/profile/widgetprofile/stat_card.dart';
 import 'package:easygo/features/settings/view/settings_screen.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // 🔹 eklendi
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -81,6 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!; // 🔹 ekledik
     final bg = Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF0E0E10)
         : const Color(0xFFFDF7F3);
@@ -144,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
                                               Text(
-                                                profileData!['name'] ?? 'Kullanıcı',
+                                                profileData!['name'] ?? '—',
                                                 style: const TextStyle(
                                                   fontSize: 20,
                                                   fontWeight: FontWeight.bold,
@@ -153,7 +154,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                profileData!['location'] ?? 'Bilinmiyor',
+                                                profileData!['location'] ??
+                                                    loc.profileUnknown,
                                                 style: const TextStyle(
                                                   fontSize: 14,
                                                   color: Colors.white70,
@@ -192,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Expanded(
                                 child: StatCard(
-                                  title: 'Arkadaş',
+                                  title: loc.profileFriends,
                                   value: friends.length.toString(),
                                   icon: Icons.people_alt_rounded,
                                   gradient: const [Color(0xFF56CCF2), Color(0xFF2F80ED)],
@@ -201,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: StatCard(
-                                  title: 'Yaş',
+                                  title: loc.profileAge,
                                   value: _ageFromBirthDate(profileData!['birthDate']) == 0
                                       ? '—'
                                       : _ageFromBirthDate(profileData!['birthDate']).toString(),
@@ -221,9 +223,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Hakkında',
-                                  style: TextStyle(
+                                Text(
+                                  loc.profileAbout,
+                                  style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -235,10 +237,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 10),
                                 AboutRow(
-                                  icon: Icons.location_on_outlined,
-                                  label:
-                                      '${profileData!['location'] ?? 'Bilinmiyor'}, Türkiye',
-                                ),
+  icon: Icons.location_on_outlined,
+  label: profileData!['location'] != null
+      ? '${profileData!['location']}, ${loc.countryName}'
+      : loc.profileUnknown,
+),
+
                               ],
                             ),
                           ),
@@ -265,9 +269,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
-                          child: InterestsCard(
-                            interests: (profileData!['interests'] as List?) ?? [],
-                          ),
+                          child: // ProfileScreen içinde InterestsCard'a giderken:
+InterestsCard(
+  interests: ((profileData!['interests'] as List?) ?? [])
+      .map<String>((k) => InterestsHelper.label(context, k.toString()))
+      .toList(),
+),
+
                         ),
                       ),
                       SliverToBoxAdapter(
@@ -288,6 +296,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!; // 🔹 eklendi
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
@@ -310,9 +319,9 @@ class _EmptyState extends StatelessWidget {
                   const Icon(Icons.person_outline,
                       size: 72, color: Colors.white70),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Profil verisi bulunamadı',
-                    style: TextStyle(
+                  Text(
+                    loc.profileNoData,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -322,7 +331,7 @@ class _EmptyState extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: onOpenSettings,
                     icon: const Icon(Icons.settings),
-                    label: const Text('Ayarları Aç'),
+                    label: Text(loc.profileOpenSettings),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFEA5455),
                       foregroundColor: Colors.white,

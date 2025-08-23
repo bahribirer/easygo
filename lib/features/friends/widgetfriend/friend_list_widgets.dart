@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class FriendCountChip extends StatelessWidget {
   final int count;
@@ -6,6 +7,7 @@ class FriendCountChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -14,7 +16,8 @@ class FriendCountChip extends StatelessWidget {
         border: Border.all(color: Colors.orange.shade200),
       ),
       child: Text(
-        '$count kişi',
+        // örn: "5 kişi" / "5 friends"
+        loc.friendCountLabel(count),
         style: const TextStyle(
           fontSize: 12,
           color: Colors.black87,
@@ -30,20 +33,23 @@ class EmptyFriendsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final loc = AppLocalizations.of(context)!;
+    return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.people_outline, size: 64, color: Colors.black38),
-            SizedBox(height: 12),
-            Text('Hiç arkadaş yok.',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            SizedBox(height: 6),
+            const Icon(Icons.people_outline, size: 64, color: Colors.black38),
+            const SizedBox(height: 12),
             Text(
-              'Arama bölümünden kullanıcıları bulup arkadaş ekleyebilirsin.',
-              style: TextStyle(color: Colors.black54),
+              loc.noFriendsTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              loc.noFriendsSubtitle,
+              style: const TextStyle(color: Colors.black54),
               textAlign: TextAlign.center,
             ),
           ],
@@ -55,15 +61,16 @@ class EmptyFriendsView extends StatelessWidget {
 
 class FriendSearchBar extends StatelessWidget {
   final TextEditingController controller;
-  final String hint;
+  final String? hint;
   const FriendSearchBar({
     super.key,
     required this.controller,
-    this.hint = 'Ara',
+    this.hint,
   });
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -86,14 +93,14 @@ class FriendSearchBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               decoration: InputDecoration(
-                hintText: hint,
+                hintText: hint ?? loc.searchHint,
                 border: InputBorder.none,
               ),
             ),
           ),
           if (controller.text.isNotEmpty)
             IconButton(
-              tooltip: 'Temizle',
+              tooltip: loc.clear,
               icon: const Icon(Icons.close),
               onPressed: () {
                 controller.clear();

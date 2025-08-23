@@ -5,6 +5,8 @@ import 'package:easygo/core/service/user_profile_service.dart';
 import 'package:easygo/features/profile/steps/profile_step2.dart';
 import 'package:easygo/features/profile/steps/profile_step_common.dart';
 import 'package:easygo/widgets/ui/blur_blob.dart';
+import 'package:easygo/l10n/app_localizations.dart';
+import 'package:easygo/main.dart'; // ThemeProvider erişimi için
 
 class ProfileStep1Screen extends StatefulWidget {
   const ProfileStep1Screen({super.key});
@@ -43,11 +45,12 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
       final userId = prefs.getString('userId');
       if (userId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kullanıcı ID bulunamadı')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorMissingInfoMessage)),
         );
         return;
       }
 
+      // ✅ Backend’e kaydet
       final res = await UserProfileService.updateOrCreateProfile(
         userId: userId,
         gender: selectedGender,
@@ -55,7 +58,13 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
       );
 
       if (!mounted) return;
+
       if (res['success'] == true) {
+        // ✅ locale değiştir (ThemeProvider üzerinden)
+        if (selectedLanguage != null) {
+          await ThemeProvider.of(context).setLanguage(selectedLanguage!);
+        }
+
         Navigator.push(
           context,
           PageRouteBuilder(
@@ -67,7 +76,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['message'] ?? 'Hata oluştu')),
+          SnackBar(content: Text(res['message'] ?? AppLocalizations.of(context)!.genericError)),
         );
       }
     } finally {
@@ -77,6 +86,7 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final bgLight = const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
     final accent = const Color(0xFFEA5455);
 
@@ -94,22 +104,16 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
               ),
             ),
           ),
-          // Blur “blob”lar (ortak widget)
+          // Blur bloblar
           const Positioned(
             top: -120,
             right: -80,
-            child: BlurBlob(
-              size: 260,
-              color: Color(0x73FEB692), // .45 opaklık
-            ),
+            child: BlurBlob(size: 260, color: Color(0x73FEB692)),
           ),
           Positioned(
             bottom: -140,
             left: -120,
-            child: BlurBlob(
-              size: 340,
-              color: Color(0x59EA5455), // accent.withOpacity(.35)
-            ),
+            child: BlurBlob(size: 340, color: Color(0x59EA5455)),
           ),
 
           SafeArea(
@@ -118,11 +122,11 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const StepHeader(
+                  StepHeader(
                     progress: .25,
                     trailing: Text(
-                      'Adım 1 / 4',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      loc.stepCount(1, 4), // Adım 1 / 4
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -137,55 +141,57 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const StepSectionTitle(
-                                    title: 'Dil',
-                                    subtitle:
-                                        'Uygulamayı hangi dilde kullanmak istersin?',
+                                  StepSectionTitle(
+                                    title: loc.languageTitle,
+                                    subtitle: loc.languageSubtitle,
                                   ),
                                   const SizedBox(height: 8),
                                   DropdownButtonFormField<String>(
                                     value: selectedLanguage,
                                     isExpanded: true,
                                     decoration: _fieldDeco(
-                                      label: 'Dil Seçiniz',
+                                      label: loc.languageSelect,
                                       icon: Icons.language_outlined,
                                     ),
-                                    items: const [
-                                      DropdownMenuItem(value: 'tr', child: Text('Türkçe')),
-                                      DropdownMenuItem(value: 'en', child: Text('İngilizce')),
+                                    items: [
+                                      DropdownMenuItem(
+                                          value: 'tr', child: Text(loc.langTurkish)),
+                                      DropdownMenuItem(
+                                          value: 'en', child: Text(loc.langEnglish)),
                                     ],
                                     onChanged: (v) => setState(() => selectedLanguage = v),
-                                    validator: (v) => v == null ? 'Lütfen bir dil seçin' : null,
+                                    validator: (v) =>
+                                        v == null ? loc.errorSelectLanguage : null,
                                   ),
 
                                   const SizedBox(height: 18),
-                                  const StepSectionTitle(
-                                    title: 'Cinsiyet',
-                                    subtitle: 'Kendini nasıl tanımlıyorsun?',
+                                  StepSectionTitle(
+                                    title: loc.genderTitle,
+                                    subtitle: loc.genderSubtitle,
                                   ),
                                   const SizedBox(height: 8),
                                   DropdownButtonFormField<String>(
                                     value: selectedGender,
                                     isExpanded: true,
                                     decoration: _fieldDeco(
-                                      label: 'Cinsiyet Seçiniz',
+                                      label: loc.genderSelect,
                                       icon: Icons.person_outline_rounded,
                                     ),
-                                    items: const [
-                                      DropdownMenuItem(value: 'Kadın', child: Text('Kadın')),
-                                      DropdownMenuItem(value: 'Erkek', child: Text('Erkek')),
-                                      DropdownMenuItem(value: 'Diğer', child: Text('Diğer')),
+                                    items: [
+                                      DropdownMenuItem(
+                                          value: 'Kadın', child: Text(loc.genderFemale)),
+                                      DropdownMenuItem(
+                                          value: 'Erkek', child: Text(loc.genderMale)),
+                                      DropdownMenuItem(
+                                          value: 'Diğer', child: Text(loc.genderOther)),
                                     ],
                                     onChanged: (v) => setState(() => selectedGender = v),
                                     validator: (v) =>
-                                        v == null ? 'Lütfen bir cinsiyet seçin' : null,
+                                        v == null ? loc.errorSelectGender : null,
                                   ),
 
                                   const SizedBox(height: 6),
-                                  const StepHintCard(
-                                    text:
-                                        'Bu bilgileri daha sonra profil ayarlarından değiştirebilirsin.',
-                                  ),
+                                  StepHintCard(text: loc.infoEditableLater),
                                 ],
                               ),
                             ),
@@ -219,9 +225,9 @@ class _ProfileStep1ScreenState extends State<ProfileStep1Screen>
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text(
-                                'Devam Et',
-                                style: TextStyle(
+                            : Text(
+                                loc.continueButton,
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
                                 ),

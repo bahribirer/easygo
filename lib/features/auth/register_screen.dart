@@ -7,6 +7,7 @@ import 'package:easygo/core/service/auth_service.dart';
 import 'package:easygo/features/profile/steps/profile_step1.dart';
 import 'package:easygo/widgets/ui/glass_card.dart';
 import 'package:easygo/widgets/ui/blur_blob.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // 🔹 eklendi
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -104,9 +105,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 13),
                             ),
-                            child: const Text(
-                              'Tamam',
-                              style: TextStyle(
+                            child: Text(
+                              AppLocalizations.of(context)!.ok, // 🔹 çeviri
+                              style: const TextStyle(
                                   fontWeight: FontWeight.w800, fontSize: 15),
                             ),
                           ),
@@ -128,14 +129,14 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Future<void> _info(String msg) => _showAnimatedDialog(
-        title: 'Eksik / Hatalı Bilgi',
+        title: AppLocalizations.of(context)!.dialogInfoTitle, // 🔹
         message: msg,
         icon: Icons.info_outline_rounded,
         color: Colors.orange.shade700,
       );
 
   Future<void> _error(String msg) => _showAnimatedDialog(
-        title: 'Kayıt Başarısız',
+        title: AppLocalizations.of(context)!.dialogErrorTitle, // 🔹
         message: msg,
         icon: Icons.error_outline_rounded,
         color: Colors.red.shade700,
@@ -143,7 +144,6 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   // -------- VALIDATION --------
   bool _isValidUniversityEmail(String email) {
-    // İstersen burayı ".edu.tr" geneline açabilirsin.
     final re = RegExp(r'^[\w\.-]+@metu\.edu\.tr$');
     return re.hasMatch(email);
   }
@@ -168,19 +168,21 @@ class _RegisterScreenState extends State<RegisterScreen>
     return Colors.green;
   }
 
-  String _strengthText() {
-    if (_strength <= .25) return 'Zayıf';
-    if (_strength <= .5) return 'Orta';
-    if (_strength <= .75) return 'İyi';
-    return 'Güçlü';
+  String _strengthText(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    if (_strength <= .25) return loc.strengthWeak;
+    if (_strength <= .5) return loc.strengthMedium;
+    if (_strength <= .75) return loc.strengthGood;
+    return loc.strengthStrong;
   }
 
   // -------- SUBMIT --------
   Future<void> _submit() async {
+    final loc = AppLocalizations.of(context)!;
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
-      await _info('Lütfen tüm alanları doğru şekilde doldurun.');
+      await _info(loc.infoFillForm); // 🔹
       return;
     }
 
@@ -200,45 +202,34 @@ class _RegisterScreenState extends State<RegisterScreen>
     setState(() => _isLoading = false);
 
     if (res['success'] == true) {
-  // 🔹 Firebase tarafında da oturum aç (backend zaten user'ı oluşturdu)
-  try {
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email.toLowerCase(),
-      password: password,
-    );
-  } on FirebaseAuthException catch (e) {
-    // Burada kullanıcıyı durdurmuyoruz; sadece bilgi veriyoruz.
-    debugPrint('Firebase sign-in after register failed: ${e.code}');
-    // İstersen kullanıcıya ufak bir bilgi penceresi gösterebilirsin:
-    // await _info('Hesap oluşturuldu fakat Firebase oturumu açılamadı: ${e.code}');
-  } catch (e) {
-    debugPrint('Firebase sign-in unknown error: $e');
-  }
+      try {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email.toLowerCase(),
+          password: password,
+        );
+      } catch (_) {}
 
-  // (Opsiyonel) SharedPreferences’e userId yazmışsın; AuthService.register zaten kaydediyor.
-  // Yine de mevcut satırın kalabilir:
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('userId', res['user']['_id']);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userId', res['user']['_id']);
 
-  // ✅ Profil adımlarına geç
-  if (!mounted) return;
-  Navigator.pushReplacement(
-    context,
-    PageRouteBuilder(
-      transitionDuration: const Duration(milliseconds: 380),
-      pageBuilder: (_, __, ___) => const ProfileStep1Screen(),
-      transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
-    ),
-  );
-} else {
-  await _error(res['message'] ?? 'Bir hata oluştu.');
-}
-
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 380),
+          pageBuilder: (_, __, ___) => const ProfileStep1Screen(),
+          transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+        ),
+      );
+    } else {
+      await _error(res['message'] ?? loc.dialogErrorTitle); // 🔹
+    }
   }
 
   // -------- UI --------
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final mq = MediaQuery.of(context);
     final w = mq.size.width;
     final h = mq.size.height;
@@ -255,12 +246,11 @@ class _RegisterScreenState extends State<RegisterScreen>
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
-          tooltip: 'Geri',
+          tooltip: loc.commonBack, // 🔹
         ),
       ),
       body: Stack(
         children: [
-          // Gradient BG
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -270,7 +260,6 @@ class _RegisterScreenState extends State<RegisterScreen>
               ),
             ),
           ),
-          // Blobs
           Positioned(
             top: -h * .18,
             right: -w * .2,
@@ -295,7 +284,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo & Headline
                     Column(
                       children: [
                         Container(
@@ -322,7 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: 'Hesap Oluştur\n',
+                                text: '${loc.registerTitle}\n', // 🔹
                                 style: TextStyle(
                                   fontSize: 22,
                                   color: Colors.red.shade700,
@@ -330,7 +318,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 ),
                               ),
                               TextSpan(
-                                text: 'Hemen kayıt ol, sohbete başla',
+                                text: loc.registerSubtitle, // 🔹
                                 style: TextStyle(
                                   fontSize: 18,
                                   color: Colors.blue.shade700,
@@ -345,52 +333,48 @@ class _RegisterScreenState extends State<RegisterScreen>
                     ),
                     const SizedBox(height: 16),
 
-                    // Glass form card
                     GlassCard(
                       child: Form(
                         key: _formKey,
                         child: Column(
                           children: [
-                            // Name
                             TextFormField(
                               controller: nameController,
                               textCapitalization: TextCapitalization.words,
                               textInputAction: TextInputAction.next,
                               decoration: _decoration(
-                                label: 'İsim Soyisim',
-                                hint: 'Adını yaz',
+                                label: loc.nameLabel, // 🔹
+                                hint: loc.nameHint, // 🔹
                                 icon: Icons.person_outline_rounded,
                               ),
                               validator: (v) {
                                 final t = (v ?? '').trim();
-                                if (t.isEmpty) return 'İsim gerekli';
-                                if (t.length < 2) return 'Daha uzun bir isim girin';
+                                if (t.isEmpty) return loc.nameLabel;
+                                if (t.length < 2) return loc.infoFillForm;
                                 return null;
                               },
                             ),
                             const SizedBox(height: 14),
-                            // Email
                             TextFormField(
                               controller: emailController,
                               keyboardType: TextInputType.emailAddress,
                               autofillHints: const [AutofillHints.email],
                               textInputAction: TextInputAction.next,
                               decoration: _decoration(
-                                label: 'Üniversite E-Postası',
-                                hint: 'kullanici@metu.edu.tr',
+                                label: loc.emailLabel, // 🔹
+                                hint: loc.emailHint, // 🔹
                                 icon: Icons.alternate_email_rounded,
                               ),
                               validator: (v) {
                                 final t = (v ?? '').trim();
-                                if (t.isEmpty) return 'E-posta gerekli';
+                                if (t.isEmpty) return loc.errorEmptyEmail;
                                 if (!_isValidUniversityEmail(t)) {
-                                  return 'Lütfen geçerli bir @metu.edu.tr adresi girin';
+                                  return loc.errorEmailDomain;
                                 }
                                 return null;
                               },
                             ),
                             const SizedBox(height: 14),
-                            // Password
                             TextFormField(
                               controller: passwordController,
                               obscureText: _obscure,
@@ -399,8 +383,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _submit(),
                               decoration: _decoration(
-                                label: 'Şifre',
-                                hint: '••••••••',
+                                label: loc.passwordLabel, // 🔹
+                                hint: loc.passwordHint, // 🔹
                                 icon: Icons.lock_outline_rounded,
                                 suffix: IconButton(
                                   onPressed: () =>
@@ -412,39 +396,38 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               validator: (v) {
                                 final t = v ?? '';
-                                if (t.isEmpty) return 'Şifre gerekli';
-                                if (t.length < 8) return 'En az 8 karakter';
+                                if (t.isEmpty) return loc.passwordRequired;
+                                if (t.length < 8) return loc.passwordMinChars(8);
                                 if (!RegExp(r'[A-Z]').hasMatch(t)) {
-                                  return 'En az bir büyük harf olmalı';
+                                  return 'En az bir büyük harf'; // 🔹 istersen loc’a eklenir
                                 }
                                 if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]')
                                     .hasMatch(t)) {
-                                  return 'En az bir özel karakter (@,#,!) olmalı';
+                                  return 'En az bir özel karakter (@,#,!)'; // 🔹 istersen loc’a eklenir
                                 }
                                 return null;
                               },
                             ),
 
-                            // Strength meter + checklist
                             if (passwordController.text.isNotEmpty) ...[
                               const SizedBox(height: 12),
                               _StrengthMeter(
                                 strength: _strength,
                                 color: _strengthColor(),
-                                label: _strengthText(),
+                                label: _strengthText(context), // 🔹
                               ),
                               const SizedBox(height: 8),
                               _ChecklistRow(
                                 ok: _hasMinLen,
-                                text: 'En az 8 karakter',
+                                text: loc.passwordMinChars(8), // 🔹
                               ),
                               _ChecklistRow(
                                 ok: _hasUpper,
-                                text: 'En az bir büyük harf (A-Z)',
+                                text: 'En az bir büyük harf (A-Z)', // 🔹
                               ),
                               _ChecklistRow(
                                 ok: _hasSpecial,
-                                text: 'En az bir özel karakter (@,#,!)',
+                                text: 'En az bir özel karakter (@,#,!)', // 🔹
                               ),
                             ],
 
@@ -470,9 +453,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
-                                        'Kayıt Ol',
-                                        style: TextStyle(
+                                    : Text(
+                                        loc.btnRegister, // 🔹
+                                        style: const TextStyle(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 16,
                                         ),
@@ -489,7 +472,6 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
           ),
 
-          // Loading overlay
           if (_isLoading)
             IgnorePointer(
               ignoring: true,
@@ -553,7 +535,6 @@ class _StrengthMeter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 4 parçalı bar
     final steps = [
       strength >= .10,
       strength >= .35,

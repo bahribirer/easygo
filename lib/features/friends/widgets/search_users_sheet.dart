@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:easygo/core/service/friendService.dart';
 import 'package:easygo/features/friends/widgets/status_chip.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 class SearchUsersSheet extends StatefulWidget {
   final String currentUserId;
@@ -28,7 +29,6 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
   String? error;
   Timer? _debounce;
 
-  // Aynı sheet’te gönderilmişleri işaretle
   final Set<String> _locallySent = {};
 
   bool _isSelf(Map u) => u['_id'] == widget.currentUserId;
@@ -46,6 +46,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
   }
 
   Future<void> _runSearch(String q) async {
+    final loc = AppLocalizations.of(context)!;
     if (q.trim().isEmpty) {
       setState(() {
         results = [];
@@ -67,7 +68,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
     } catch (_) {
       setState(() {
         searching = false;
-        error = "Arama sırasında bir hata oluştu.";
+        error = loc.searchError;
       });
     }
   }
@@ -80,24 +81,26 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
   }
 
   Future<void> _sendReq(Map user) async {
-    // kendine istek gönderme
+    final loc = AppLocalizations.of(context)!;
     if (_isSelf(user)) {
-      await _infoDialog("Olmaz ki 🙂", "Kendine arkadaşlık isteği gönderemezsin.");
+      await _infoDialog(loc.selfRequestTitle, loc.selfRequestMessage);
       return;
     }
     try {
       await FriendService.sendRequest(widget.currentUserId, user['_id']);
       _locallySent.add(user['_id']);
       if (mounted) setState(() {});
-      await _infoDialog("İstek Gönderildi",
-          "${user['name'] ?? 'Kullanıcı'} adlı kullanıcıya arkadaşlık isteği gönderildi.");
+      await _infoDialog(
+        loc.requestSentTitle,
+        loc.requestSentMessage(user['name'] ?? loc.userDefault),
+      );
     } catch (_) {
-      await _infoDialog("Gönderilemedi",
-          "İstek gönderilirken bir sorun oluştu. Lütfen tekrar deneyin.");
+      await _infoDialog(loc.requestFailedTitle, loc.requestFailedMessage);
     }
   }
 
   Future<void> _infoDialog(String title, String message) async {
+    final loc = AppLocalizations.of(context)!;
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -105,7 +108,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Tamam")),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(loc.ok)),
         ],
       ),
     );
@@ -113,6 +116,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.85,
@@ -147,15 +151,15 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                 const SizedBox(height: 12),
 
                 // Başlık
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-                      Icon(Icons.person_search, color: Colors.red),
-                      SizedBox(width: 8),
+                      const Icon(Icons.person_search, color: Colors.red),
+                      const SizedBox(width: 8),
                       Text(
-                        "Kullanıcı Ara",
-                        style: TextStyle(
+                        loc.searchUsersTitle,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
@@ -185,15 +189,15 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                             autofocus: true,
                             onChanged: _onQueryChanged,
                             onSubmitted: (v) => _runSearch(v),
-                            decoration: const InputDecoration(
-                              hintText: "İsim veya e-posta ile ara",
+                            decoration: InputDecoration(
+                              hintText: loc.searchHint,
                               border: InputBorder.none,
                             ),
                           ),
                         ),
                         if (query.isNotEmpty)
                           IconButton(
-                            tooltip: "Temizle",
+                            tooltip: loc.clear,
                             icon: const Icon(Icons.close),
                             onPressed: () {
                               query = '';
@@ -217,7 +221,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.search),
-                      label: const Text("Ara"),
+                      label: Text(loc.searchButton),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
@@ -243,7 +247,9 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                             ? Center(
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                                  child: Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                                  child: Text(error!,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: Colors.red)),
                                 ),
                               )
                             : (results.isEmpty
@@ -313,11 +319,11 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                                             ],
                                           ),
                                           trailing: _isSelf(user)
-                                              ? StatusChip("Bu sensin", bg: Colors.grey.shade300)
+                                              ? StatusChip(loc.thisIsYou, bg: Colors.grey.shade300)
                                               : canSend
                                                   ? ElevatedButton.icon(
                                                       icon: const Icon(Icons.person_add_alt_1, size: 18),
-                                                      label: const Text("Ekle"),
+                                                      label: Text(loc.add),
                                                       style: ElevatedButton.styleFrom(
                                                         backgroundColor: Colors.green,
                                                         foregroundColor: Colors.white,
@@ -327,8 +333,8 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                                                       onPressed: () async => await _sendReq(user),
                                                     )
                                                   : (alreadyFriend
-                                                      ? const StatusChip("Zaten arkadaş")
-                                                      : const StatusChip("Beklemede")),
+                                                      ? StatusChip(loc.alreadyFriend)
+                                                      : StatusChip(loc.pending)),
                                         ),
                                       );
                                     },
@@ -336,7 +342,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                   ),
                 ),
 
-                // Sheet kapatıldığında hangi id’lere istek gönderdik bilgisini geri ver
+                // Kapat butonu
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   child: SizedBox(
@@ -344,7 +350,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                     child: OutlinedButton.icon(
                       onPressed: () => Navigator.pop(context, _locallySent),
                       icon: const Icon(Icons.check),
-                      label: const Text("Kapat"),
+                      label: Text(loc.close),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -365,13 +371,14 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final loc = AppLocalizations.of(context)!;
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off, size: 48, color: Colors.black38),
-          SizedBox(height: 8),
-          Text("Sonuç bulunamadı", style: TextStyle(fontSize: 16, color: Colors.black54)),
+          const Icon(Icons.search_off, size: 48, color: Colors.black38),
+          const SizedBox(height: 8),
+          Text(loc.noResults, style: const TextStyle(fontSize: 16, color: Colors.black54)),
         ],
       ),
     );

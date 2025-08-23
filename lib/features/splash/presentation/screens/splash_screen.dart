@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:easygo/features/welcome/welcome_screen.dart';
 import '../widgetsplash/blur_blob.dart';
 import '../widgetsplash/bottom_progress.dart';
+import 'package:easygo/l10n/app_localizations.dart'; // ✅ eklendi
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -83,6 +84,8 @@ class _SplashScreenState extends State<SplashScreen>
     final h = mq.size.height;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final loc = AppLocalizations.of(context)!; // ✅ lokalizasyon
+
     final gradientColors = isDark
         ? const [Color(0xFF111018), Color(0xFF1B1A28)]
         : const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
@@ -155,7 +158,7 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               SizedBox(height: h * 0.018),
                               Text(
-                                "easyGO",
+                                "easyGO", // marka adı çevrilmez
                                 style: TextStyle(
                                   fontSize: w * 0.10,
                                   fontWeight: FontWeight.w900,
@@ -177,7 +180,7 @@ class _SplashScreenState extends State<SplashScreen>
                   FadeTransition(
                     opacity: _fadeCtrl,
                     child: Text(
-                      "Seni bekleyen harika insanlar var!",
+                      loc.splashSubtitle, // 🔹 lokalize edildi
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: w * 0.040,

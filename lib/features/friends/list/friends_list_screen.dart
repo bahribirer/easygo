@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easygo/l10n/app_localizations.dart';
 
 import 'package:easygo/features/friends/friend_profile_screen.dart';
 import 'package:easygo/features/friends/widgetfriend/friend_tile.dart';
@@ -60,6 +61,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
   }
 
   Future<void> _openFriend(dynamic friend) async {
+    final loc = AppLocalizations.of(context)!;
     final friendId = (friend['_id'] ?? '').toString();
 
     final removed = await Navigator.push<bool>(
@@ -74,17 +76,19 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
       _applyAll();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Arkadaş listeden kaldırıldı.')),
+        SnackBar(content: Text(loc.friendRemovedMessage)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF0E9),
       appBar: AppBar(
-        title: const Text('Arkadaş Listesi', style: TextStyle(color: Colors.white)),
+        title: Text(loc.friendsListTitle, style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepOrange,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -94,9 +98,9 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
               _applyAll();
             },
             icon: const Icon(Icons.sort, color: Colors.white),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: _SortMode.az, child: Text('A → Z')),
-              PopupMenuItem(value: _SortMode.za, child: Text('Z → A')),
+            itemBuilder: (context) => [
+              PopupMenuItem(value: _SortMode.az, child: Text(loc.sortAZ)),
+              PopupMenuItem(value: _SortMode.za, child: Text(loc.sortZA)),
             ],
           ),
           const SizedBox(width: 6),
@@ -113,7 +117,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
                 Expanded(
                   child: FriendSearchBar(
                     controller: _searchCtrl,
-                    hint: 'İsim, e-posta veya konum ara',
+                    hint: loc.searchFriendsHint,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -135,7 +139,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
                       final id = (f['_id'] ?? index.toString()).toString();
                       return FriendTile(
                         idTag: id,
-                        name: f['name'] ?? 'Kullanıcı',
+                        name: f['name'] ?? loc.defaultUserName,
                         email: f['universityEmail'] ?? '',
                         location: f['location'] ?? '',
                         base64Photo: f['profilePhoto'],
