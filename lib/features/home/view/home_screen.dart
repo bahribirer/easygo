@@ -14,6 +14,7 @@ import 'package:easygo/shared/popups/app_popups.dart';
 import 'package:easygo/features/home/models/pending_event.dart';
 import 'package:easygo/features/home/widgets/widgets.dart';
 import 'package:easygo/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -98,289 +99,367 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openCreateEventSheet() async {
-    final mq = MediaQuery.of(context);
-    final loc = AppLocalizations.of(context)!;
+  final mq = MediaQuery.of(context);
+  final loc = AppLocalizations.of(context)!;
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
 
-    final types = <String>[
-      loc.eventTypeCoffee,
-      loc.eventTypeMeal,
-      loc.eventTypeChat,
-      loc.eventTypeStudy,
-      loc.eventTypeSport,
-      loc.eventTypeCinema,
-    ];
+  String? selectedKey;
+  DateTime? dateTime;
+  String? city;
+  int? selectedSlot;
+  bool sending = false;
 
-    final rootContext = context;
+  final timeSlots = {
+    0: ['09:00', '12:00'],
+    1: ['15:00', '18:00'],
+    2: ['21:00', '00:00'],
+  };
 
-    String? type;
-    DateTime? dateTime;
-    String? city;
-    int? selectedSlot;
-    bool sending = false;
+  if (_todayCount >= 3) {
+    _limitSnack();
+    return;
+  }
 
-    final timeSlots = {
-      0: ['09:00', '12:00'],
-      1: ['15:00', '18:00'],
-      2: ['21:00', '00:00'],
-    };
+  // 📅 Tarih seçici (sadece hafta sonu)
+  Future<void> pickDate(StateSetter setModal) async {
+    final now = DateTime.now();
 
-    if (_todayCount >= 3) {
-      _limitSnack();
-      return;
+    // İlk uygun hafta sonunu bul
+    DateTime firstValid = now.add(const Duration(days: 1));
+    while (!(firstValid.weekday == DateTime.saturday || firstValid.weekday == DateTime.sunday)) {
+      firstValid = firstValid.add(const Duration(days: 1));
     }
 
-    final result = await showModalBottomSheet<bool>(
+    final pickedDate = await showDatePicker(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return FractionallySizedBox(
-          heightFactor: 0.92,
-          child: StatefulBuilder(
-            builder: (context, setModal) {
-              Future<void> pickDate() async {
-                final now = DateTime.now();
-                final pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: now.add(const Duration(days: 1)),
-                  firstDate: now,
-                  lastDate: now.add(const Duration(days: 90)),
-                  selectableDayPredicate: (day) {
-                    return day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
-                  },
-                  helpText: loc.selectDate,
-                  cancelText: loc.cancel,
-                  confirmText: loc.ok,
-                );
-                if (pickedDate == null) return;
-                setModal(() {
-                  dateTime = pickedDate;
-                });
-              }
-
-              final canSend =
-                  type != null && dateTime != null && selectedSlot != null && city != null && !sending;
-
-              Future<void> submit() async {
-                if (!canSend) return;
-
-                await _refreshTodayCount();
-                if (_todayCount >= 3) {
-                  _limitSnack();
-                  return;
-                }
-
-                setModal(() => sending = true);
-                try {
-                  final slot = timeSlots[selectedSlot]!;
-                  final res = await EventService.createEvent(
-                    type: type!,
-                    city: city!,
-                    dateTime: DateTime(
-                      dateTime!.year,
-                      dateTime!.month,
-                      dateTime!.day,
-                      int.parse(slot[0].split(':')[0]),
-                    ),
-                  );
-
-                  if (!context.mounted) return;
-
-                  if (res['success'] == true) {
-                    Future.microtask(() {
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop(true);
-                      }
-                    });
-                  } else {
-                    setModal(() => sending = false);
-                    await showError(context, loc.sendFailed, res['message']?.toString());
-                  }
-                } catch (e) {
-                  setModal(() => sending = false);
-                  if (!context.mounted) return;
-                  await showError(context, loc.error, e.toString());
-                }
-              }
-
-              return Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 24,
-                      offset: const Offset(0, -6),
-                    )
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      20, 10, 20,
-                      20 + mq.viewInsets.bottom + mq.padding.bottom,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: 44,
-                            height: 5,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.event_outlined, color: Colors.red),
-                            const SizedBox(width: 8),
-                            Text(loc.createEvent,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        Text(loc.eventType,
-                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: type,
-                              isExpanded: true,
-                              hint: Text(loc.select),
-                              items: types.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                              onChanged: (v) => setModal(() => type = v),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Text(loc.dateWeekendOnly,
-                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
-                        const SizedBox(height: 8),
-                        InkWell(
-                          onTap: pickDate,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.calendar_today, color: Colors.black54),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    dateTime == null
-                                        ? loc.selectDateShort
-                                        : '${dateTime!.day}.${dateTime!.month}.${dateTime!.year}',
-                                    style: TextStyle(
-                                      color: dateTime == null ? Colors.black54 : Colors.black87,
-                                      fontWeight: dateTime == null ? FontWeight.w400 : FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                const Icon(Icons.edit_calendar_outlined, color: Colors.black38),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Text(loc.timeSlot,
-                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 10,
-                          children: timeSlots.entries.map((entry) {
-                            final idx = entry.key;
-                            final label = "${entry.value[0]} - ${entry.value[1]}";
-                            final selected = selectedSlot == idx;
-                            return ChoiceChip(
-                              label: Text(label),
-                              selected: selected,
-                              onSelected: (_) => setModal(() => selectedSlot = idx),
-                              selectedColor: Colors.red.shade100,
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Text(loc.city,
-                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: city,
-                              isExpanded: true,
-                              hint: Text(loc.selectCity),
-                              items: turkishCities
-                                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                                  .toList(),
-                              onChanged: (v) => setModal(() => city = v),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: canSend ? submit : null,
-                            icon: sending
-                                ? const SizedBox(
-                                    width: 18, height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Icon(Icons.send_rounded),
-                            label: Text(sending ? loc.sending : loc.sendToPool),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              elevation: 0,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+      initialDate: firstValid,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 90)),
+      selectableDayPredicate: (day) =>
+          day.weekday == DateTime.saturday || day.weekday == DateTime.sunday,
+      helpText: loc.selectDate,
+      cancelText: loc.cancel,
+      confirmText: loc.ok,
+      builder: (context, child) {
+        if (child == null) return const SizedBox.shrink();
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.deepOrange,
+              onPrimary: Colors.white,
+              onSurface: isDark ? Colors.white70 : Colors.black87,
+              surface: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            ),
+            dialogBackgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: Colors.deepOrange),
+            ),
           ),
+          child: child,
         );
       },
     );
 
-    if (!mounted) return;
-    if (result == true) {
-      await showSuccess(rootContext, loc.eventSent);
-      await _refreshPending();
-      await _refreshTodayCount();
-    }
+    if (pickedDate == null) return;
+    setModal(() => dateTime = pickedDate);
   }
+
+  final result = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) {
+      return FractionallySizedBox(
+        heightFactor: 0.92,
+        child: StatefulBuilder(
+          builder: (context, setModal) {
+            final canSend = selectedKey != null &&
+                dateTime != null &&
+                selectedSlot != null &&
+                city != null &&
+                !sending;
+
+            Future<void> submit() async {
+              if (!canSend) return;
+              await _refreshTodayCount();
+              if (_todayCount >= 3) {
+                _limitSnack();
+                return;
+              }
+
+              setModal(() => sending = true);
+              try {
+                final slot = timeSlots[selectedSlot]!;
+                final res = await EventService.createEvent(
+                  type: selectedKey!, // ✅ DB’ye daima sabit key gider
+                  city: city!,
+                  dateTime: DateTime(
+                    dateTime!.year,
+                    dateTime!.month,
+                    dateTime!.day,
+                    int.parse(slot[0].split(':')[0]),
+                  ),
+                );
+
+                if (!context.mounted) return;
+                if (res['success'] == true) {
+                  Future.microtask(() {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop(true);
+                    }
+                  });
+                } else {
+                  setModal(() => sending = false);
+                  await showError(context, loc.sendFailed, res['message']?.toString());
+                }
+              } catch (e) {
+                setModal(() => sending = false);
+                if (!context.mounted) return;
+                await showError(context, loc.error, e.toString());
+              }
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.6 : 0.1),
+                    blurRadius: 24,
+                    offset: const Offset(0, -6),
+                  )
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    10,
+                    20,
+                    20 + mq.viewInsets.bottom + mq.padding.bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 44,
+                          height: 5,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.event_outlined, color: Colors.deepOrange),
+                          const SizedBox(width: 8),
+                          Text(
+                            loc.createEvent,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // --- Event Type ---
+                      Text(
+                        loc.eventType,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white70 : Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2C2C2C) : null,
+                          border: Border.all(
+                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+  value: selectedKey,
+  isExpanded: true,
+  hint: Text(loc.select, style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+  items: [
+    DropdownMenuItem(value: "coffee", child: Text(loc.eventTypeCoffee)),
+    DropdownMenuItem(value: "meal", child: Text(loc.eventTypeMeal)),
+    DropdownMenuItem(value: "chat", child: Text(loc.eventTypeChat)),
+    DropdownMenuItem(value: "study", child: Text(loc.eventTypeStudy)),
+    DropdownMenuItem(value: "sport", child: Text(loc.eventTypeSport)),
+    DropdownMenuItem(value: "cinema", child: Text(loc.eventTypeCinema)),
+  ],
+  onChanged: (v) => setModal(() => selectedKey = v),
+)
+
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // --- Date ---
+                      Text(
+                        loc.dateWeekendOnly,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white70 : Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () => pickDate(setModal),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today,
+                                  color: isDark ? Colors.white54 : Colors.black54),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  dateTime == null
+                                      ? loc.selectDateShort
+                                      : DateFormat('EEE, d MMM yyyy').format(dateTime!),
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? Colors.white70
+                                        : (dateTime == null ? Colors.black54 : Colors.black87),
+                                    fontWeight:
+                                        dateTime == null ? FontWeight.w400 : FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Icon(Icons.edit_calendar_outlined,
+                                  color: isDark ? Colors.white24 : Colors.black38),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // --- Time Slots ---
+                      Text(
+                        loc.timeSlot,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white70 : Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 10,
+                        children: timeSlots.entries.map((entry) {
+                          final idx = entry.key;
+                          final label = "${entry.value[0]} - ${entry.value[1]}";
+                          final selected = selectedSlot == idx;
+                          return ChoiceChip(
+                            label: Text(label),
+                            selected: selected,
+                            onSelected: (_) => setModal(() => selectedSlot = idx),
+                            selectedColor: Colors.red.shade100,
+                            backgroundColor: isDark ? Colors.grey.shade800 : null,
+                            labelStyle: TextStyle(
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // --- City ---
+                      Text(
+                        loc.city,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white70 : Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2C2C2C) : null,
+                          border: Border.all(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            dropdownColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                            value: city,
+                            isExpanded: true,
+                            hint: Text(loc.selectCity,
+                                style: TextStyle(
+                                    color: isDark ? Colors.white54 : Colors.black54)),
+                            items: turkishCities.map((e) {
+                              return DropdownMenuItem(value: e, child: Text(e));
+                            }).toList(),
+                            onChanged: (v) => setModal(() => city = v),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: canSend ? submit : null,
+                          icon: sending
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.send_rounded),
+                          label: Text(sending ? loc.sending : loc.sendToPool),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    },
+  );
+
+  if (!mounted) return;
+  if (result == true) {
+    await showSuccess(context, loc.eventSent);
+    await _refreshPending();
+    await _refreshTodayCount();
+  }
+}
+
+
+
 
   void _limitSnack() {
     final loc = AppLocalizations.of(context)!;
@@ -388,76 +467,90 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final loc = AppLocalizations.of(context)!;
-    final hasPending = _pendingList.isNotEmpty;
+Widget build(BuildContext context) {
+  final mq = MediaQuery.of(context);
+  final loc = AppLocalizations.of(context)!;
+  final hasPending = _pendingList.isNotEmpty;
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F3),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // header
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFF6F61), Color(0xFFFF9472)],
-                ),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                children: [
-                  Image.asset('assets/easygo_logo.png', height: 44),
-                  const Spacer(),
-                  InkWell(
-                    onTap: () async {
-                      await Navigator.push(
-                        context, MaterialPageRoute(builder: (_) => const InboxScreen()),
-                      );
-                      InboxBadge.notifier.value = 0;
-                    },
-                    borderRadius: BorderRadius.circular(999),
-                    child: Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          const Icon(Icons.notifications_none, color: Colors.white, size: 28),
-                          Positioned(
-                            right: -2,
-                            top: -2,
-                            child: ValueListenableBuilder<int>(
-                              valueListenable: InboxBadge.notifier,
-                              builder: (_, count, __) {
-                                if (count <= 0) return const SizedBox.shrink();
-                                return Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
+  return Scaffold(
+    backgroundColor: theme.scaffoldBackgroundColor, // ✅
+    body: SafeArea(
+      child: Column(
+        children: [
+          // header
+          Container(
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? const LinearGradient(
+                      colors: [Color(0xFF1E1E1E), Color(0xFF2C2C2C)],
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFFFF6F61), Color(0xFFFF9472)],
+                    ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.6 : 0.25),
+                  blurRadius: 8,
+                )
+              ],
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              children: [
+                Image.asset('assets/easygo_logo.png', height: 44),
+                const Spacer(),
+                InkWell(
+                  onTap: () async {
+                    await Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const InboxScreen()),
+                    );
+                    InboxBadge.notifier.value = 0;
+                  },
+                  borderRadius: BorderRadius.circular(999),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6.0),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(Icons.notifications_none,
+                            color: isDark ? Colors.white70 : Colors.white,
+                            size: 28),
+                        // badge aynı kalıyor
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: ValueListenableBuilder<int>(
+                            valueListenable: InboxBadge.notifier,
+                            builder: (_, count, __) {
+                              if (count <= 0) return const SizedBox.shrink();
+                              return Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '$count',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  child: Text(
-                                    '$count',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                                ),
+                              );
+                            },
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
             const SizedBox(height: 10),
 
@@ -530,7 +623,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // bottom nav
       bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
+      color: isDark ? const Color(0xFF1E1E1E) : Colors.white, // ✅
         elevation: 12,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
@@ -559,10 +652,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        icons[index],
-                        color: selectedIndex == index ? Colors.deepOrange : Colors.grey,
-                        size: 26,
-                      ),
+                      icons[index],
+                      color: selectedIndex == index
+                          ? Colors.deepOrange
+                          : (isDark ? Colors.white70 : Colors.grey),
+                      size: 26,
+                    ),
                     ),
                     const SizedBox(height: 3),
                     AnimatedContainer(

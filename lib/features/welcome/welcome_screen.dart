@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+import 'package:easygo/core/service/google_auth_service.dart';
 import 'package:easygo/features/auth/login_screen.dart';
+import 'package:easygo/features/home/view/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:country_icons/country_icons.dart';
@@ -200,80 +202,159 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                         // Cam efektli CTA kart
                         GlassCard(
-                          dark: isDark,
-                          child: Column(
-                            children: [
-                              // Giriş Yap
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isDark
-                                        ? const Color(0xFFEA5455)
-                                        : Colors.red.shade600,
-                                    elevation: 0,
-                                    minimumSize: const Size.fromHeight(52),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) => const LoginScreen()),
-                                    );
-                                  },
-                                  child: Text(
-                                    loc.loginButton,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 12),
-
-                              // Google ile Devam Et (placeholder)
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  icon: const Icon(Icons.g_mobiledata, size: 28),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: isDark
-                                        ? Colors.white
-                                        : const Color(0xFF5F6368),
-                                    side: BorderSide(
-                                      color: isDark
-                                          ? Colors.white24
-                                          : const Color(0xFFDBDBDB),
-                                    ),
-                                    minimumSize: const Size.fromHeight(52),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    backgroundColor: isDark
-                                        ? const Color(0xFF121212)
-                                        : Colors.white,
-                                  ),
-                                  label: Text(
-      loc.googleSignIn, // 🔹 arb’den çekiliyor
-      style: GoogleFonts.poppins(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
+  dark: isDark,
+  child: Column(
+    children: [
+      // 📌 Normal Giriş Yap (email + şifre)
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isDark
+                ? const Color(0xFFEA5455)
+                : Colors.red.shade600,
+            elevation: 0,
+            minimumSize: const Size.fromHeight(52),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            );
+          },
+          child: Text(
+            loc.loginButton, // "Giriş Yap"
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
-    ),
-                                  onPressed: () {
-                                    // TODO: Google Sign-In entegre edilecek
-                                  },
-                                ),
-                              ),
-                            ],
+
+      const SizedBox(height: 12),
+
+      // 📌 Google ile Devam Et
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          icon: const Icon(Icons.g_mobiledata, size: 28),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: isDark ? Colors.white : const Color(0xFF5F6368),
+            side: BorderSide(
+              color: isDark ? Colors.white24 : const Color(0xFFDBDBDB),
+            ),
+            minimumSize: const Size.fromHeight(52),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+          ),
+          label: Text(
+            loc.googleSignIn, // "Google ile Devam Et"
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          onPressed: () async {
+            final res = await GoogleAuthService.signInWithGoogle();
+            if (res['success'] == true) {
+              final user = res['user'] ?? {};
+              final userName = user['name'] ?? "Kullanıcı";
+
+              // ✅ Hoş geldin modalı
+              if (!mounted) return;
+              showModalBottomSheet(
+                context: context,
+                backgroundColor:
+                    isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                shape: const RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                builder: (_) => Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle,
+                          color: Colors.green.shade400, size: 64),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Hoş geldin, $userName 🎉",
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark
+                              ? const Color(0xFFEA5455)
+                              : Colors.red.shade600,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context); // modal kapat
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const HomeScreen()),
+                          );
+                        },
+                        child: Text(
+                          "Devam Et",
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              if (!mounted) return;
+              // ❌ Hata dialogu
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  title: const Text("Giriş Hatası"),
+                  content: Text(
+                    res['message'] ?? "Google ile giriş başarısız oldu.",
+                    style: GoogleFonts.poppins(fontSize: 15),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Tamam"),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        ),
+      ),
+    ],
+  ),
+),
+
 
                         const SizedBox(height: 14),
 

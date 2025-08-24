@@ -2,7 +2,6 @@ import 'package:easygo/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -35,72 +34,88 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _handleSend() async {
-    final loc = AppLocalizations.of(context)!;
-    setState(() => _touched = true);
+  final loc = AppLocalizations.of(context)!;
+  setState(() => _touched = true);
 
-    final user = FirebaseAuth.instance.currentUser;
-    String? emailToSend;
+  String? emailToSend = _emailCtrl.text.trim();
 
-    if (user != null && user.email != null) {
-      emailToSend = user.email!;
-    } else {
-      if (!_formKey.currentState!.validate()) {
-        _showPopup(
-          title: loc.errorMissingInfoTitle,
-          message: loc.errorMissingInfoMessage,
-          type: _PopupType.error,
-        );
-        return;
-      }
-      emailToSend = _emailCtrl.text.trim();
-    }
-
-    FocusScope.of(context).unfocus();
-    setState(() => _submitting = true);
-
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: emailToSend);
-      _showPopup(
-        title: loc.successSentTitle,
-        message: loc.successSentMessage(emailToSend!),
-        type: _PopupType.success,
-      );
-    } on FirebaseAuthException catch (e) {
-      debugPrint('🔴 FirebaseAuthException code=${e.code} message=${e.message}');
-      String errorMsg;
-      switch (e.code) {
-        case 'invalid-email':
-          errorMsg = loc.errorInvalidEmail;
-          break;
-        case 'network-request-failed':
-          errorMsg = loc.errorNetwork;
-          break;
-        case 'too-many-requests':
-          errorMsg = loc.errorTooManyRequests;
-          break;
-        case 'user-disabled':
-          errorMsg = loc.errorUserDisabled;
-          break;
-        default:
-          errorMsg = loc.errorGeneric;
-      }
-      _showPopup(title: loc.infoTitle, message: errorMsg, type: _PopupType.info);
-    } catch (_) {
-      _showPopup(
-        title: loc.infoTitle,
-        message: loc.errorGeneric2,
-        type: _PopupType.info,
-      );
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
+  // 📌 Eğer alan boşsa → popup çıkar
+  if (emailToSend.isEmpty) {
+    _showPopup(
+      title: loc.errorMissingInfoTitle,
+      message: "Lütfen geçerli bir METU e-posta adresi girin.",
+      type: _PopupType.error,
+    );
+    return;
   }
+
+  // 📌 Eğer METU uzantılı değilse → popup çıkar
+  if (!emailToSend.endsWith("@metu.edu.tr")) {
+    _showPopup(
+      title: loc.errorInvalidEmail,
+      message: "Sadece METU e-posta adresi kabul edilmektedir.",
+      type: _PopupType.error,
+    );
+    return;
+  }
+
+  if (!_formKey.currentState!.validate()) {
+    _showPopup(
+      title: loc.errorMissingInfoTitle,
+      message: loc.errorMissingInfoMessage,
+      type: _PopupType.error,
+    );
+    return;
+  }
+
+  FocusScope.of(context).unfocus();
+  setState(() => _submitting = true);
+
+  try {
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: emailToSend);
+    _showPopup(
+      title: loc.successSentTitle,
+      message: loc.successSentMessage(emailToSend),
+      type: _PopupType.success,
+    );
+  } on FirebaseAuthException catch (e) {
+    debugPrint('🔴 FirebaseAuthException code=${e.code} message=${e.message}');
+    String errorMsg;
+    switch (e.code) {
+      case 'invalid-email':
+        errorMsg = loc.errorInvalidEmail;
+        break;
+      case 'network-request-failed':
+        errorMsg = loc.errorNetwork;
+        break;
+      case 'too-many-requests':
+        errorMsg = loc.errorTooManyRequests;
+        break;
+      case 'user-disabled':
+        errorMsg = loc.errorUserDisabled;
+        break;
+      default:
+        errorMsg = loc.errorGeneric;
+    }
+    _showPopup(title: loc.infoTitle, message: errorMsg, type: _PopupType.info);
+  } catch (_) {
+    _showPopup(
+      title: loc.infoTitle,
+      message: loc.errorGeneric2,
+      type: _PopupType.info,
+    );
+  } finally {
+    if (mounted) setState(() => _submitting = false);
+  }
+}
+
 
   void _showPopup({
     required String title,
     required String message,
     _PopupType type = _PopupType.info,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final (icon, color) = switch (type) {
       _PopupType.success => (Icons.check_circle, Colors.green),
       _PopupType.error => (Icons.error_rounded, Colors.red),
@@ -112,6 +127,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
@@ -125,20 +141,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 title,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: color.shade700,
+                  color: isDark ? Colors.white : color.shade700,
                 ),
               ),
             ),
           ],
         ),
-        content: Text(message),
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               loc.ok,
-              style:
-                  TextStyle(color: color.shade700, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : color.shade700,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -152,18 +175,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final red = Colors.red.shade700;
     final loc = AppLocalizations.of(context)!;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FB),
+        backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FB),
         appBar: AppBar(
-          backgroundColor: const Color(0xFFF8F9FB),
+          backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FB),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            icon: Icon(Icons.arrow_back, color: isDark ? Colors.white70 : Colors.black87),
             onPressed: () => Navigator.pop(context),
             tooltip: loc.back,
           ),
@@ -180,7 +204,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   loc.forgotPasswordTitle,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: red,
+                    color: isDark ? Colors.orangeAccent : red,
                     letterSpacing: 0.2,
                   ),
                   textAlign: TextAlign.center,
@@ -189,7 +213,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   loc.forgotPasswordSubtitle,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.black54,
+                    color: isDark ? Colors.white70 : Colors.black54,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -197,15 +221,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        blurRadius: 22,
-                        offset: Offset(0, 10),
-                        color: Color(0x1F000000),
-                      ),
-                    ],
+                    boxShadow: isDark
+                        ? []
+                        : const [
+                            BoxShadow(
+                              blurRadius: 22,
+                              offset: Offset(0, 10),
+                              color: Color(0x1F000000),
+                            ),
+                          ],
                   ),
                   child: Form(
                     key: _formKey,
@@ -223,13 +249,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           onChanged: (_) => setState(() {}),
                           onFieldSubmitted: (_) => _handleSend(),
                           validator: _emailValidator,
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                           decoration: InputDecoration(
                             labelText: loc.universityEmailLabel,
                             hintText: loc.universityEmailHint,
-                            prefixIcon:
-                                const Icon(Icons.alternate_email_rounded),
+                            labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                            hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black38),
+                            prefixIcon: Icon(Icons.alternate_email_rounded,
+                                color: isDark ? Colors.white70 : Colors.black54),
                             filled: true,
-                            fillColor: const Color(0xFFF5F6F8),
+                            fillColor: isDark ? Colors.black26 : const Color(0xFFF5F6F8),
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 14),
                             border: OutlineInputBorder(
@@ -241,14 +270,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            const Icon(Icons.lock_reset,
-                                size: 18, color: Colors.grey),
+                            Icon(Icons.lock_reset,
+                                size: 18, color: isDark ? Colors.white70 : Colors.grey),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 loc.forgotPasswordNote,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: isDark ? Colors.white70 : Colors.grey[600],
                                 ),
                               ),
                             ),
@@ -273,7 +302,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     width: 22,
                                     height: 22,
                                     child:
-                                        CircularProgressIndicator(strokeWidth: 2),
+                                        CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                   )
                                 : Text(
                                     loc.sendVerificationButton,
@@ -297,8 +326,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       type: _PopupType.info,
                     );
                   },
-                  icon: const Icon(Icons.help_outline),
-                  label: Text(loc.emailNotReceived),
+                  icon: Icon(Icons.help_outline, color: isDark ? Colors.white70 : Colors.black54),
+                  label: Text(
+                    loc.emailNotReceived,
+                    style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                  ),
                 ),
               ],
             ),

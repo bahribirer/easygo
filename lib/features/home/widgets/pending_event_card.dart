@@ -46,7 +46,7 @@ class PendingEventCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${pending.type} • ${pending.city}',
+                  '${pending.label(context)} • ${pending.city}',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),

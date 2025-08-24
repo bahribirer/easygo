@@ -997,4 +997,23 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get countryName => 'Türkiye';
+
+  @override
+  String get verifyEmailTitle => 'Doğrulama Maili Gönderildi';
+
+  @override
+  String get verifyEmailMessage =>
+      'Lütfen mail kutunu kontrol et ve hesabını doğrula.';
+
+  @override
+  String get verifyEmailResent => 'Doğrulama maili tekrar gönderildi.';
+
+  @override
+  String get btnCheckVerification => 'Doğrulamayı Kontrol Et';
+
+  @override
+  String get btnResendEmail => 'Tekrar Mail Gönder';
+
+  @override
+  String get verifyEmailNotYet => 'Hesap henüz doğrulanmamış.';
 }

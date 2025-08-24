@@ -31,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     required IconData icon,
     Color? color,
   }) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 220),
@@ -39,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     await showGeneralDialog(
       context: context,
       barrierLabel: 'dialog',
-      barrierColor: Colors.black45,
+      barrierColor: Colors.black54,
       barrierDismissible: true,
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (_, __, ___) {
@@ -49,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Material(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 elevation: 0,
                 borderRadius: BorderRadius.circular(20),
                 child: ConstrainedBox(
@@ -82,7 +84,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         Text(
                           message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 15, color: Colors.black87),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
@@ -97,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               padding: const EdgeInsets.symmetric(vertical: 13),
                             ),
                             child: Text(
-                              AppLocalizations.of(context)!.ok, // 🔹 çevrildi
+                              AppLocalizations.of(context)!.ok,
                               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                             ),
                           ),
@@ -118,14 +123,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   Future<void> _showInfoDialog(String msg) => _showAnimatedDialog(
-        title: AppLocalizations.of(context)!.loginInfoTitle, // 🔹 çevrildi
+        title: AppLocalizations.of(context)!.loginInfoTitle,
         message: msg,
         icon: Icons.info_outline,
         color: Colors.orange.shade700,
       );
 
   Future<void> _showErrorDialog(String msg) => _showAnimatedDialog(
-        title: AppLocalizations.of(context)!.loginErrorTitle, // 🔹 çevrildi
+        title: AppLocalizations.of(context)!.loginErrorTitle,
         message: msg,
         icon: Icons.error_outline,
         color: Colors.red.shade700,
@@ -133,11 +138,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   // ----------------- LOGIN -----------------
   Future<void> _handleLogin() async {
-    final loc = AppLocalizations.of(context)!; // 🔹 kolay erişim
+    final loc = AppLocalizations.of(context)!;
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
-      await _showInfoDialog(loc.loginInfoMessage); // 🔹 çevrildi
+      await _showInfoDialog(loc.loginInfoMessage);
       return;
     }
 
@@ -164,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           ),
         );
       } else {
-        await _showErrorDialog(res['message'] ?? loc.loginErrorTitle); // 🔹 çevrildi
+        await _showErrorDialog(res['message'] ?? loc.loginErrorTitle);
       }
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -174,28 +179,28 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       switch (e.code) {
         case 'invalid-credential':
         case 'wrong-password':
-          msg = loc.loginErrorWrongCredentials; // 🔹 çevrildi
+          msg = loc.loginErrorWrongCredentials;
           break;
         case 'user-not-found':
-          msg = loc.loginErrorNotFound; // 🔹 çevrildi
+          msg = loc.loginErrorNotFound;
           break;
         case 'too-many-requests':
-          msg = loc.loginErrorTooMany; // 🔹 çevrildi
+          msg = loc.loginErrorTooMany;
           break;
         case 'network-request-failed':
-          msg = loc.loginErrorNetwork; // 🔹 çevrildi
+          msg = loc.loginErrorNetwork;
           break;
         case 'invalid-email':
-          msg = loc.loginErrorInvalidEmail; // 🔹 çevrildi
+          msg = loc.loginErrorInvalidEmail;
           break;
         default:
-msg = loc.loginErrorUnexpected(e.code);
+          msg = loc.loginErrorUnexpected(e.code);
       }
       await _showErrorDialog(msg);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
+      await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
     }
   }
 
@@ -206,10 +211,13 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
     final w = mq.size.width;
     final h = mq.size.height;
 
-    final baseGrad = const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
-    final accent = const Color(0xFFEA5455);
+    final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final loc = AppLocalizations.of(context)!; // 🔹 kolay erişim
+    final baseGrad = isDark
+        ? const [Color(0xFF1E1E1E), Color(0xFF2C2C2C)]
+        : const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
+    final accent = const Color(0xFFEA5455);
 
     return Scaffold(
       backgroundColor: baseGrad.first,
@@ -230,12 +238,12 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
           Positioned(
             top: -h * .18,
             right: -w * .2,
-            child: BlurBlob(size: w * .9, color: const Color(0xFFFEB692).withOpacity(.55)),
+            child: BlurBlob(size: w * .9, color: const Color(0xFFFEB692).withOpacity(.45)),
           ),
           Positioned(
             bottom: -h * .22,
             left: -w * .25,
-            child: BlurBlob(size: w * 1.1, color: accent.withOpacity(.40)),
+            child: BlurBlob(size: w * 1.1, color: accent.withOpacity(.35)),
           ),
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
@@ -259,7 +267,7 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: accent.withOpacity(.22),
+                                color: accent.withOpacity(.25),
                                 blurRadius: 28,
                                 spreadRadius: 2,
                               ),
@@ -277,18 +285,18 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: '${loc.loginTitleLine1}\n', // 🔹 çevrildi
+                                text: '${loc.loginTitleLine1}\n',
                                 style: TextStyle(
                                   fontSize: 22,
-                                  color: Colors.red.shade700,
+                                  color: isDark ? Colors.orangeAccent : Colors.red.shade700,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
                               TextSpan(
-                                text: loc.loginTitleLine2, // 🔹 çevrildi
+                                text: loc.loginTitleLine2,
                                 style: TextStyle(
                                   fontSize: 20,
-                                  color: Colors.blue.shade700,
+                                  color: isDark ? Colors.lightBlueAccent : Colors.blue.shade700,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -312,15 +320,16 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.email],
                               decoration: _inputDecoration(
-                                label: loc.emailLabel, // 🔹 çevrildi
-                                hint: loc.emailHint, // 🔹 çevrildi
+                                label: loc.emailLabel,
+                                hint: loc.emailHint,
                                 icon: Icons.alternate_email_rounded,
+                                isDark: isDark,
                               ),
                               validator: (val) {
                                 final t = (val ?? '').trim();
-                                if (t.isEmpty) return loc.emailRequired; // 🔹 çevrildi
+                                if (t.isEmpty) return loc.emailRequired;
                                 final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(t);
-                                if (!ok) return loc.emailInvalid; // 🔹 çevrildi
+                                if (!ok) return loc.emailInvalid;
                                 return null;
                               },
                             ),
@@ -331,8 +340,8 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _handleLogin(),
                               decoration: _inputDecoration(
-                                label: loc.passwordLabel, // 🔹 çevrildi
-                                hint: loc.passwordHint, // 🔹 çevrildi
+                                label: loc.passwordLabel,
+                                hint: loc.passwordHint,
                                 icon: Icons.lock_outline_rounded,
                                 suffix: IconButton(
                                   onPressed: () => setState(() => _obscure = !_obscure),
@@ -340,10 +349,11 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
                                     _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
                                   ),
                                 ),
+                                isDark: isDark,
                               ),
                               validator: (val) {
-                                if ((val ?? '').isEmpty) return loc.passwordRequired; // 🔹 çevrildi
-                                if ((val ?? '').length < 6) return loc.passwordMinLength; // 🔹 çevrildi
+                                if ((val ?? '').isEmpty) return loc.passwordRequired;
+                                if ((val ?? '').length < 6) return loc.passwordMinLength;
                                 return null;
                               },
                             ),
@@ -357,7 +367,12 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
                                     MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
                                   );
                                 },
-                                child: Text(loc.forgotPassword), // 🔹 çevrildi
+                                child: Text(
+                                  loc.forgotPassword,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -378,7 +393,7 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
                                         child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
                                       )
                                     : Text(
-                                        loc.loginButton, // 🔹 çevrildi
+                                        loc.loginButton,
                                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                                       ),
                               ),
@@ -393,7 +408,6 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
             ),
           ),
 
-          // Loading overlay
           if (_isLoading)
             IgnorePointer(
               ignoring: true,
@@ -413,23 +427,26 @@ await _showErrorDialog(loc.loginErrorUnexpected(e.toString()));
     required String hint,
     required IconData icon,
     Widget? suffix,
+    required bool isDark,
   }) {
     return InputDecoration(
-      prefixIcon: Icon(icon),
+      prefixIcon: Icon(icon, color: isDark ? Colors.white70 : Colors.black87),
       suffixIcon: suffix,
       labelText: label,
       hintText: hint,
+      labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+      hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black38),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.black.withOpacity(.08)),
+        borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black.withOpacity(.08)),
       ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(14)),
-        borderSide: BorderSide(color: Color(0xFFEA5455), width: 1.4),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFEA5455), width: 1.4),
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: isDark ? Colors.black.withOpacity(.25) : Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
   }

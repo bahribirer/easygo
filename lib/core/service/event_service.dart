@@ -26,8 +26,7 @@ class EventService {
       body: jsonEncode({
         "type": type,
         "city": city,
-        "dateTime": dateTime.toIso8601String(),
-      }),
+"dateTime": dateTime.toUtc().toIso8601String(),      }),
     );
 
     return jsonDecode(response.body);

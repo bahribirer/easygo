@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:easygo/features/profile/steps/verify_email_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // 🔹 eklendi
 
 import 'package:easygo/core/service/user_profile_service.dart';
 import 'package:easygo/features/welcome/welcome_screen.dart';
@@ -83,8 +85,8 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
     }
   }
 
-  // ---------- Success dialog ----------
-  Future<void> _showSuccessDialog() async {
+  // ---------- Verification dialog ----------
+  Future<void> _showVerificationDialog() async {
     final loc = AppLocalizations.of(context)!;
     return showDialog(
       context: context,
@@ -96,54 +98,37 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-                  ),
-                ),
-                child: const CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.check_rounded,
-                      size: 34, color: Color(0xFF43A047)),
-                ),
-              ),
+              const Icon(Icons.email_outlined, size: 50, color: Colors.deepOrange),
               const SizedBox(height: 14),
               Text(
-                loc.registrationCompleted,
+                loc.verifyEmailTitle, // "Doğrulama Maili Gönderildi"
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 6),
               Text(
-                loc.registrationCompletedSubtitle,
+                loc.verifyEmailMessage, // "Lütfen mail kutunu kontrol et."
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey.shade700),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                      (route) => false,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                  child: Text(loc.startApp),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(builder: (_) => const VerifyEmailScreen()),
+);
+
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  backgroundColor: const Color(0xFFEA5455),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
                 ),
+                child: Text(loc.ok),
               ),
             ],
           ),
@@ -178,7 +163,11 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
 
       if (!mounted) return;
       if (result['success'] == true) {
-        await _showSuccessDialog();
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null && !user.emailVerified) {
+          await user.sendEmailVerification();
+          await _showVerificationDialog();
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['message'] ?? AppLocalizations.of(context)!.genericError)),
@@ -189,8 +178,12 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
     }
   }
 
-  void _skipForNow() {
-    _showSuccessDialog();
+  void _skipForNow() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+      await _showVerificationDialog();
+    }
   }
 
   @override
@@ -220,7 +213,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                           const SizedBox(height: 10),
 
                           Text(
-                            loc.step4Title, // "Profil Fotoğrafın"
+                            loc.step4Title,
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
@@ -234,7 +227,6 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Avatar + edit
                           Center(
                             child: Stack(
                               alignment: Alignment.bottomRight,
@@ -279,7 +271,7 @@ class _ProfileStep4ScreenState extends State<ProfileStep4Screen> {
                                     onPressed: _pickImageSource,
                                     icon: const Icon(Icons.edit,
                                         color: Colors.deepOrange),
-                                    tooltip: loc.photoSelect, // "Fotoğrafı seç"
+                                    tooltip: loc.photoSelect,
                                   ),
                                 ),
                               ],

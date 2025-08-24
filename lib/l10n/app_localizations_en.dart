@@ -999,4 +999,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get countryName => 'Turkey';
+
+  @override
+  String get verifyEmailTitle => 'Verification Email Sent';
+
+  @override
+  String get verifyEmailMessage =>
+      'Please check your inbox and verify your account.';
+
+  @override
+  String get verifyEmailResent => 'Verification email has been resent.';
+
+  @override
+  String get btnCheckVerification => 'Check Verification';
+
+  @override
+  String get btnResendEmail => 'Resend Email';
+
+  @override
+  String get verifyEmailNotYet => 'Your account has not been verified yet.';
 }

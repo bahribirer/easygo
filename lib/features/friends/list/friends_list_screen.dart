@@ -84,12 +84,16 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF0E9),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFFFF0E9),
       appBar: AppBar(
-        title: Text(loc.friendsListTitle, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.deepOrange,
+        title: Text(
+          loc.friendsListTitle,
+          style: TextStyle(color: isDark ? Colors.white : Colors.white),
+        ),
+        backgroundColor: Colors.deepOrange, // turuncu sabit kalsın
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           PopupMenuButton<_SortMode>(
@@ -99,8 +103,20 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
             },
             icon: const Icon(Icons.sort, color: Colors.white),
             itemBuilder: (context) => [
-              PopupMenuItem(value: _SortMode.az, child: Text(loc.sortAZ)),
-              PopupMenuItem(value: _SortMode.za, child: Text(loc.sortZA)),
+              PopupMenuItem(
+                value: _SortMode.az,
+                child: Text(
+                  loc.sortAZ,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                ),
+              ),
+              PopupMenuItem(
+                value: _SortMode.za,
+                child: Text(
+                  loc.sortZA,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                ),
+              ),
             ],
           ),
           const SizedBox(width: 6),
@@ -111,7 +127,7 @@ class _FriendsListScreenState extends State<FriendsListScreen> {
           // Üst bar: arama + sayaç
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            decoration: const BoxDecoration(color: Colors.transparent),
+            color: Colors.transparent,
             child: Row(
               children: [
                 Expanded(

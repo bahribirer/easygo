@@ -101,14 +101,25 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
 
   Future<void> _infoDialog(String title, String message) async {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(message),
+        title: Text(title,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black)),
+        content: Text(message,
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(loc.ok)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.ok,
+                style: TextStyle(color: isDark ? Colors.blue[200] : Colors.blue)),
+          ),
         ],
       ),
     );
@@ -117,6 +128,8 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.85,
@@ -125,11 +138,13 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF121212) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: isDark
+                    ? Colors.black.withOpacity(0.6)
+                    : Colors.black.withOpacity(0.08),
                 blurRadius: 24,
                 offset: const Offset(0, -4),
               ),
@@ -144,7 +159,7 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                   width: 48,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -159,10 +174,10 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                       const SizedBox(width: 8),
                       Text(
                         loc.searchUsersTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
                       ),
                     ],
@@ -175,22 +190,29 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: isDark ? Colors.white24 : Colors.grey.shade300),
                     ),
                     child: Row(
                       children: [
                         const SizedBox(width: 8),
-                        const Icon(Icons.search, color: Colors.black54),
+                        Icon(Icons.search,
+                            color: isDark ? Colors.white54 : Colors.black54),
                         const SizedBox(width: 8),
                         Expanded(
                           child: TextField(
+                            style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black),
                             autofocus: true,
                             onChanged: _onQueryChanged,
                             onSubmitted: (v) => _runSearch(v),
                             decoration: InputDecoration(
                               hintText: loc.searchHint,
+                              hintStyle: TextStyle(
+                                  color:
+                                      isDark ? Colors.white38 : Colors.black38),
                               border: InputBorder.none,
                             ),
                           ),
@@ -198,7 +220,8 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                         if (query.isNotEmpty)
                           IconButton(
                             tooltip: loc.clear,
-                            icon: const Icon(Icons.close),
+                            icon: Icon(Icons.close,
+                                color: isDark ? Colors.white70 : Colors.black54),
                             onPressed: () {
                               query = '';
                               results = [];
@@ -258,12 +281,15 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                                     controller: scrollController,
                                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
                                     itemCount: results.length,
-                                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 10),
                                     itemBuilder: (context, i) {
                                       final user = results[i] as Map<String, dynamic>;
                                       final alreadyFriend = _isAlreadyFriend(user);
                                       final alreadyReq = _isAlreadyRequested(user);
-                                      final canSend = !alreadyFriend && !alreadyReq && !_isSelf(user);
+                                      final canSend = !alreadyFriend &&
+                                          !alreadyReq &&
+                                          !_isSelf(user);
 
                                       final photo = user['profilePhoto'];
                                       final name = user['name'] ?? '';
@@ -272,46 +298,84 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
 
                                       return Container(
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: isDark
+                                              ? const Color(0xFF1E1E1E)
+                                              : Colors.white,
                                           borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.grey.shade200),
+                                          border: Border.all(
+                                              color: isDark
+                                                  ? Colors.white10
+                                                  : Colors.grey.shade200),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.03),
+                                              color: isDark
+                                                  ? Colors.black.withOpacity(0.5)
+                                                  : Colors.black.withOpacity(0.03),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),
                                           ],
                                         ),
                                         child: ListTile(
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 12, vertical: 8),
                                           leading: CircleAvatar(
                                             radius: 26,
-                                            backgroundImage: (photo != null && photo != '')
-                                                ? MemoryImage(base64Decode(photo))
-                                                : const AssetImage('assets/profile.jpg') as ImageProvider,
+                                            backgroundImage: (photo != null &&
+                                                    photo != '')
+                                                ? MemoryImage(
+                                                    base64Decode(photo))
+                                                : const AssetImage(
+                                                        'assets/profile.jpg')
+                                                    as ImageProvider,
                                           ),
                                           title: Text(
                                             name,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontWeight: FontWeight.w600),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
                                           ),
                                           subtitle: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text(email, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                              Text(
+                                                email,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                    color: isDark
+                                                        ? Colors.white70
+                                                        : Colors.black87),
+                                              ),
                                               if ((location as String).isNotEmpty)
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                                    Icon(Icons.location_on,
+                                                        size: 14,
+                                                        color: isDark
+                                                            ? Colors.white54
+                                                            : Colors.grey),
                                                     const SizedBox(width: 4),
                                                     Flexible(
                                                       child: Text(
                                                         location,
                                                         maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: isDark
+                                                                ? Colors
+                                                                    .white54
+                                                                : Colors
+                                                                    .black54),
                                                       ),
                                                     ),
                                                   ],
@@ -319,21 +383,40 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
                                             ],
                                           ),
                                           trailing: _isSelf(user)
-                                              ? StatusChip(loc.thisIsYou, bg: Colors.grey.shade300)
+                                              ? StatusChip(loc.thisIsYou,
+                                                  bg: isDark
+                                                      ? Colors.grey.shade700
+                                                      : Colors.grey.shade300)
                                               : canSend
                                                   ? ElevatedButton.icon(
-                                                      icon: const Icon(Icons.person_add_alt_1, size: 18),
+                                                      icon: const Icon(
+                                                          Icons
+                                                              .person_add_alt_1,
+                                                          size: 18),
                                                       label: Text(loc.add),
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: Colors.green,
-                                                        foregroundColor: Colors.white,
-                                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 8),
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10)),
                                                       ),
-                                                      onPressed: () async => await _sendReq(user),
+                                                      onPressed: () async =>
+                                                          await _sendReq(user),
                                                     )
                                                   : (alreadyFriend
-                                                      ? StatusChip(loc.alreadyFriend)
+                                                      ? StatusChip(
+                                                          loc.alreadyFriend)
                                                       : StatusChip(loc.pending)),
                                         ),
                                       );
@@ -344,15 +427,24 @@ class _SearchUsersSheetState extends State<SearchUsersSheet> {
 
                 // Kapat butonu
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  padding:
+                      const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   child: SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context, _locallySent),
+                      onPressed: () =>
+                          Navigator.pop(context, _locallySent),
                       icon: const Icon(Icons.check),
                       label: Text(loc.close),
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        foregroundColor:
+                            isDark ? Colors.white : Colors.black,
+                        side: BorderSide(
+                            color: isDark
+                                ? Colors.white24
+                                : Colors.grey.shade400),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
@@ -372,13 +464,21 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search_off, size: 48, color: Colors.black38),
+          Icon(Icons.search_off,
+              size: 48, color: isDark ? Colors.white38 : Colors.black38),
           const SizedBox(height: 8),
-          Text(loc.noResults, style: const TextStyle(fontSize: 16, color: Colors.black54)),
+          Text(
+            loc.noResults,
+            style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.white54 : Colors.black54),
+          ),
         ],
       ),
     );

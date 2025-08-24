@@ -40,6 +40,8 @@ class _RegisterScreenState extends State<RegisterScreen>
     required IconData icon,
     Color? color,
   }) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 220),
@@ -58,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Material(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
@@ -84,14 +86,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: color ?? Colors.red.shade700,
+                            color: isDark ? Colors.white : (color ?? Colors.red.shade700),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 15, color: Colors.black87),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
@@ -108,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                             child: Text(
                               AppLocalizations.of(context)!.ok, // 🔹 çeviri
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w800, fontSize: 15),
+                                  fontWeight: FontWeight.w800, fontSize: 15, color: Colors.white),
                             ),
                           ),
                         ),
@@ -233,8 +238,11 @@ class _RegisterScreenState extends State<RegisterScreen>
     final mq = MediaQuery.of(context);
     final w = mq.size.width;
     final h = mq.size.height;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final baseGrad = const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
+    final baseGrad = isDark
+        ? [const Color(0xFF1A1A1A), const Color(0xFF121212)]
+        : [const Color(0xFFFFF0E9), const Color(0xFFFFF7F3)];
     final accent = const Color(0xFFEA5455);
 
     return Scaffold(
@@ -244,7 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white70 : Colors.black87),
           onPressed: () => Navigator.pop(context),
           tooltip: loc.commonBack, // 🔹
         ),
@@ -265,7 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             right: -w * .2,
             child: BlurBlob(
               size: w * .9,
-              color: const Color(0xFFFEB692).withOpacity(.55),
+              color: const Color(0xFFFEB692).withOpacity(.35),
             ),
           ),
           Positioned(
@@ -273,7 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             left: -w * .25,
             child: BlurBlob(
               size: w * 1.1,
-              color: accent.withOpacity(.40),
+              color: accent.withOpacity(.25),
             ),
           ),
 
@@ -310,18 +318,18 @@ class _RegisterScreenState extends State<RegisterScreen>
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: '${loc.registerTitle}\n', // 🔹
+                                text: '${loc.registerTitle}\n',
                                 style: TextStyle(
                                   fontSize: 22,
-                                  color: Colors.red.shade700,
+                                  color: isDark ? Colors.redAccent : Colors.red.shade700,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
                               TextSpan(
-                                text: loc.registerSubtitle, // 🔹
+                                text: loc.registerSubtitle,
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: Colors.blue.shade700,
+                                  color: isDark ? Colors.blue[200]! : Colors.blue.shade700,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -340,12 +348,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                           children: [
                             TextFormField(
                               controller: nameController,
+                              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                               textCapitalization: TextCapitalization.words,
                               textInputAction: TextInputAction.next,
                               decoration: _decoration(
-                                label: loc.nameLabel, // 🔹
-                                hint: loc.nameHint, // 🔹
+                                label: loc.nameLabel,
+                                hint: loc.nameHint,
                                 icon: Icons.person_outline_rounded,
+                                isDark: isDark,
                               ),
                               validator: (v) {
                                 final t = (v ?? '').trim();
@@ -357,13 +367,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: emailController,
+                              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                               keyboardType: TextInputType.emailAddress,
                               autofillHints: const [AutofillHints.email],
                               textInputAction: TextInputAction.next,
                               decoration: _decoration(
-                                label: loc.emailLabel, // 🔹
-                                hint: loc.emailHint, // 🔹
+                                label: loc.emailLabel,
+                                hint: loc.emailHint,
                                 icon: Icons.alternate_email_rounded,
+                                isDark: isDark,
                               ),
                               validator: (v) {
                                 final t = (v ?? '').trim();
@@ -377,21 +389,25 @@ class _RegisterScreenState extends State<RegisterScreen>
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: passwordController,
+                              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                               obscureText: _obscure,
                               onChanged: (text) =>
                                   setState(() => _calcPasswordHints(text)),
                               textInputAction: TextInputAction.done,
                               onFieldSubmitted: (_) => _submit(),
                               decoration: _decoration(
-                                label: loc.passwordLabel, // 🔹
-                                hint: loc.passwordHint, // 🔹
+                                label: loc.passwordLabel,
+                                hint: loc.passwordHint,
                                 icon: Icons.lock_outline_rounded,
+                                isDark: isDark,
                                 suffix: IconButton(
                                   onPressed: () =>
                                       setState(() => _obscure = !_obscure),
                                   icon: Icon(_obscure
                                       ? Icons.visibility_rounded
-                                      : Icons.visibility_off_rounded),
+                                      : Icons.visibility_off_rounded,
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                  ),
                                 ),
                               ),
                               validator: (v) {
@@ -399,11 +415,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 if (t.isEmpty) return loc.passwordRequired;
                                 if (t.length < 8) return loc.passwordMinChars(8);
                                 if (!RegExp(r'[A-Z]').hasMatch(t)) {
-                                  return 'En az bir büyük harf'; // 🔹 istersen loc’a eklenir
+                                  return 'En az bir büyük harf'; 
                                 }
                                 if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>]')
                                     .hasMatch(t)) {
-                                  return 'En az bir özel karakter (@,#,!)'; // 🔹 istersen loc’a eklenir
+                                  return 'En az bir özel karakter (@,#,!)';
                                 }
                                 return null;
                               },
@@ -414,20 +430,24 @@ class _RegisterScreenState extends State<RegisterScreen>
                               _StrengthMeter(
                                 strength: _strength,
                                 color: _strengthColor(),
-                                label: _strengthText(context), // 🔹
+                                label: _strengthText(context),
+                                isDark: isDark,
                               ),
                               const SizedBox(height: 8),
                               _ChecklistRow(
                                 ok: _hasMinLen,
-                                text: loc.passwordMinChars(8), // 🔹
+                                text: loc.passwordMinChars(8),
+                                isDark: isDark,
                               ),
                               _ChecklistRow(
                                 ok: _hasUpper,
-                                text: 'En az bir büyük harf (A-Z)', // 🔹
+                                text: 'En az bir büyük harf (A-Z)',
+                                isDark: isDark,
                               ),
                               _ChecklistRow(
                                 ok: _hasSpecial,
-                                text: 'En az bir özel karakter (@,#,!)', // 🔹
+                                text: 'En az bir özel karakter (@,#,!)',
+                                isDark: isDark,
                               ),
                             ],
 
@@ -454,7 +474,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         ),
                                       )
                                     : Text(
-                                        loc.btnRegister, // 🔹
+                                        loc.btnRegister,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 16,
@@ -490,24 +510,27 @@ class _RegisterScreenState extends State<RegisterScreen>
     required String label,
     required String hint,
     required IconData icon,
+    required bool isDark,
     Widget? suffix,
   }) {
     return InputDecoration(
-      prefixIcon: Icon(icon),
+      prefixIcon: Icon(icon, color: isDark ? Colors.white70 : Colors.black54),
       suffixIcon: suffix,
       labelText: label,
+      labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
       hintText: hint,
+      hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black38),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.black.withOpacity(.08)),
+        borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black.withOpacity(.08)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: Color(0xFFEA5455), width: 1.4),
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
@@ -527,10 +550,12 @@ class _StrengthMeter extends StatelessWidget {
   final double strength; // 0..1
   final Color color;
   final String label;
+  final bool isDark;
   const _StrengthMeter({
     required this.strength,
     required this.color,
     required this.label,
+    required this.isDark,
   });
 
   @override
@@ -549,7 +574,7 @@ class _StrengthMeter extends StatelessWidget {
               height: 8,
               margin: EdgeInsets.only(right: i == 3 ? 0 : 6),
               decoration: BoxDecoration(
-                color: steps[i] ? color : Colors.grey.shade300,
+                color: steps[i] ? color : (isDark ? Colors.white24 : Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
@@ -571,21 +596,22 @@ class _StrengthMeter extends StatelessWidget {
 class _ChecklistRow extends StatelessWidget {
   final bool ok;
   final String text;
-  const _ChecklistRow({required this.ok, required this.text});
+  final bool isDark;
+  const _ChecklistRow({required this.ok, required this.text, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Icon(ok ? Icons.check_circle : Icons.radio_button_unchecked,
-            size: 18, color: ok ? Colors.green : Colors.grey),
+            size: 18, color: ok ? Colors.green : (isDark ? Colors.white38 : Colors.grey)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
               fontSize: 13.5,
-              color: ok ? Colors.black87 : Colors.black54,
+              color: ok ? (isDark ? Colors.greenAccent : Colors.black87) : (isDark ? Colors.white54 : Colors.black54),
               fontWeight: ok ? FontWeight.w700 : FontWeight.w500,
             ),
           ),

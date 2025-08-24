@@ -94,14 +94,32 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   Future<void> _showResultDialog(String title, String message) async {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(message),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(loc.ok)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              loc.ok,
+              style: TextStyle(color: isDark ? Colors.blue[200] : Colors.blue),
+            ),
+          ),
         ],
       ),
     );
@@ -155,6 +173,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
   // ---- İstek listesi bölümü ----
   Widget _buildRequestSection() {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (friendRequests.isEmpty) {
       return SectionCard(
         title: loc.friendRequestsTitle,
@@ -162,9 +182,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             children: [
-              const Icon(Icons.mark_email_unread_outlined, size: 40, color: Colors.black38),
+              Icon(Icons.mark_email_unread_outlined,
+                  size: 40, color: isDark ? Colors.white38 : Colors.black38),
               const SizedBox(height: 8),
-              Text(loc.noFriendRequests, style: const TextStyle(color: Colors.black54)),
+              Text(
+                loc.noFriendRequests,
+                style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+              ),
             ],
           ),
         ),
@@ -173,7 +197,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
     return SectionCard(
       title: loc.friendRequestsTitle,
-      trailing: StatusChip(loc.pendingRequests(friendRequests.length), bg: Colors.orange.shade100),
+      trailing: StatusChip(
+        loc.pendingRequests(friendRequests.length),
+        bg: isDark ? Colors.orange.shade900 : Colors.orange.shade100,
+      ),
       child: SizedBox(
         height: 170,
         child: ListView.separated(
@@ -193,14 +220,22 @@ class _FriendsScreenState extends State<FriendsScreen> {
               width: 220,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFfdfbfb), Color(0xFFebedee)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: isDark
+                    ? const LinearGradient(
+                        colors: [Color(0xFF2C2C2C), Color(0xFF1A1A1A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : const LinearGradient(
+                        colors: [Color(0xFFfdfbfb), Color(0xFFebedee)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: isDark
+                        ? Colors.black.withOpacity(0.4)
+                        : Colors.black.withOpacity(0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -211,7 +246,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   const SizedBox(width: 10),
                   CircleAvatar(
                     radius: 28,
-                    backgroundImage: (req['profilePhoto'] != null && req['profilePhoto'] != '')
+                    backgroundImage: (req['profilePhoto'] != null &&
+                            req['profilePhoto'] != '')
                         ? MemoryImage(base64Decode(req['profilePhoto']))
                         : const AssetImage('assets/profile.jpg') as ImageProvider,
                   ),
@@ -225,19 +261,29 @@ class _FriendsScreenState extends State<FriendsScreen> {
                           Text(name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : Colors.black,
+                              )),
                           const SizedBox(height: 4),
                           if (location.isNotEmpty)
                             Row(
                               children: [
-                                const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                Icon(Icons.location_on,
+                                    size: 14,
+                                    color: isDark ? Colors.white54 : Colors.grey),
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
                                     location,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark
+                                          ? Colors.white54
+                                          : Colors.black54,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -259,7 +305,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                       ? const SizedBox(
                                           width: 16,
                                           height: 16,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2, color: Colors.white))
                                       : Text(loc.accept),
                                 ),
                               ),
@@ -278,7 +325,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                       ? const SizedBox(
                                           width: 16,
                                           height: 16,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2, color: Colors.white))
                                       : Text(loc.reject),
                                 ),
                               ),
@@ -301,6 +349,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
   // ---- Arkadaş grid’i ----
   Widget _buildFriendGrid() {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (friends.isEmpty) {
       return SectionCard(
         title: loc.friendsSection,
@@ -308,9 +358,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
           padding: const EdgeInsets.symmetric(vertical: 28),
           child: Column(
             children: [
-              const Icon(Icons.people_outline, size: 44, color: Colors.black38),
+              Icon(Icons.people_outline,
+                  size: 44, color: isDark ? Colors.white38 : Colors.black38),
               const SizedBox(height: 8),
-              Text(loc.noFriends, style: const TextStyle(color: Colors.black54)),
+              Text(
+                loc.noFriends,
+                style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+              ),
               const SizedBox(height: 8),
               ElevatedButton.icon(
                 onPressed: _openSearchSheet,
@@ -319,7 +373,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
@@ -351,20 +406,33 @@ class _FriendsScreenState extends State<FriendsScreen> {
             onTap: () async {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => FriendProfileScreen(user: friend)),
+                MaterialPageRoute(
+                    builder: (_) => FriendProfileScreen(user: friend)),
               );
               if (result == true) await fetchData();
             },
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFBE6E0), Color(0xFFFFD6CB)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(2, 4)),
+                gradient: isDark
+                    ? const LinearGradient(
+                        colors: [Color(0xFF2E2E2E), Color(0xFF1B1B1B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : const LinearGradient(
+                        colors: [Color(0xFFFBE6E0), Color(0xFFFFD6CB)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withOpacity(0.4)
+                        : Colors.black12,
+                    blurRadius: 6,
+                    offset: const Offset(2, 4),
+                  ),
                 ],
               ),
               padding: const EdgeInsets.all(12),
@@ -376,16 +444,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       radius: 38,
                       backgroundImage: (photo != null && photo != '')
                           ? MemoryImage(base64Decode(photo))
-                          : const AssetImage('assets/profile.jpg') as ImageProvider,
+                          : const AssetImage('assets/profile.jpg')
+                              as ImageProvider,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: Colors.black87,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -394,12 +463,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                      Icon(Icons.location_on,
+                          size: 14,
+                          color: isDark ? Colors.white54 : Colors.grey),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           location,
-                          style: const TextStyle(fontSize: 13, color: Colors.grey),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white54 : Colors.grey),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
@@ -418,22 +491,36 @@ class _FriendsScreenState extends State<FriendsScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF0E9),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFFFF0E9),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 2,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white70 : Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(loc.friendsTitle, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            Text(
+              loc.friendsTitle,
+              style: TextStyle(
+                color: isDark ? Colors.red[300] : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(loc.manageConnections, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+            Text(
+              loc.manageConnections,
+              style: TextStyle(
+                color: isDark ? Colors.white54 : Colors.black54,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),

@@ -4,6 +4,33 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 // 🔹 Convenience metodu kullanacaksan bunu aç:
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+
+class GoogleAuthService {
+  static Future<UserCredential?> signInWithGoogle() async {
+    try {
+      // 1. Google hesabını seç
+      final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();
+      if (gUser == null) return null; // kullanıcı iptal etti
+
+      // 2. Auth detaylarını al
+      final GoogleSignInAuthentication gAuth = await gUser.authentication;
+
+      // 3. Firebase credential oluştur
+      final credential = GoogleAuthProvider.credential(
+        accessToken: gAuth.accessToken,
+        idToken: gAuth.idToken,
+      );
+
+      // 4. Firebase'e giriş yap
+      return await FirebaseAuth.instance.signInWithCredential(credential);
+    } catch (e) {
+      print("Google Sign-In error: $e");
+      return null;
+    }
+  }
+}
 
 class AuthService {
   /// ⚠️ Android Emulator için: http://10.0.2.2:5050

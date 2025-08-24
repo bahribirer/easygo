@@ -328,8 +328,15 @@
 "confirm": "Onayla",
 "testNotificationTitle": "Test Bildirimi",
 "testNotificationBody": "Bu bir yerel yedek",
-"countryName":"Türkiye"
-
+"countryName":"Türkiye",
+"verifyEmailTitle": "Doğrulama Maili Gönderildi",
+  "verifyEmailMessage": "Lütfen mail kutunu kontrol et ve hesabını doğrula.",
+  "verifyEmailTitle": "Doğrulama Maili Gönderildi",
+  "verifyEmailMessage": "Lütfen mail kutunu kontrol et ve hesabını doğrula.",
+  "verifyEmailResent": "Doğrulama maili tekrar gönderildi.",
+  "btnCheckVerification": "Doğrulamayı Kontrol Et",
+  "btnResendEmail": "Tekrar Mail Gönder",
+  "verifyEmailNotYet": "Hesap henüz doğrulanmamış."
 
 
    

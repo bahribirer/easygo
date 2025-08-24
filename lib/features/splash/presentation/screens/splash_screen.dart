@@ -86,14 +86,16 @@ class _SplashScreenState extends State<SplashScreen>
 
     final loc = AppLocalizations.of(context)!; // ✅ lokalizasyon
 
+    // 🌙 Dark & ☀️ Light için ayrı gradientler
     final gradientColors = isDark
-        ? const [Color(0xFF111018), Color(0xFF1B1A28)]
+        ? const [Color(0xFF0D0C12), Color(0xFF1B1A28)]
         : const [Color(0xFFFFF0E9), Color(0xFFFFF7F3)];
 
     final accentA = const Color(0xFFEA5455);
     final accentB = const Color(0xFFFEB692);
 
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0D0C12) : Colors.white,
       body: Stack(
         children: [
           // Background gradient
@@ -185,7 +187,9 @@ class _SplashScreenState extends State<SplashScreen>
                       style: TextStyle(
                         fontSize: w * 0.040,
                         fontStyle: FontStyle.italic,
-                        color: isDark ? Colors.white70 : Colors.black54,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.75)
+                            : Colors.black54,
                       ),
                     ),
                   ),
@@ -203,7 +207,9 @@ class _SplashScreenState extends State<SplashScreen>
 
                   const Spacer(),
 
-                  BottomProgress(accent: accentA),
+                  BottomProgress(
+                    accent: isDark ? Colors.white70 : accentA,
+                  ),
 
                   SizedBox(height: mq.padding.bottom + h * 0.02),
                 ],

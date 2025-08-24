@@ -1951,6 +1951,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turkey'**
   String get countryName;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Email Sent'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @verifyEmailMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your inbox and verify your account.'**
+  String get verifyEmailMessage;
+
+  /// No description provided for @verifyEmailResent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification email has been resent.'**
+  String get verifyEmailResent;
+
+  /// No description provided for @btnCheckVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Verification'**
+  String get btnCheckVerification;
+
+  /// No description provided for @btnResendEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Email'**
+  String get btnResendEmail;
+
+  /// No description provided for @verifyEmailNotYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has not been verified yet.'**
+  String get verifyEmailNotYet;
 }
 
 class _AppLocalizationsDelegate
